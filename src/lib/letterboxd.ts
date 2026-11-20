@@ -5,6 +5,18 @@ export interface Film {
   url: string;
   /** Rating en estrellas (0.5–5) o null si no puntuó. */
   rating: number | null;
+  /** URLs candidatas del poster en el CDN de imágenes de Letterboxd (probar en orden). */
+  posters: string[];
+}
+
+const POSTER_CDN = 'https://a.ltrbxd.com/resized/film-poster';
+
+/** El CDN arma la ruta con los dígitos del id + id-slug; a veces el slug de la imagen no lleva el año. */
+export function posterUrls(filmId: string, slug: string, version: string | null, w = 230, h = 345): string[] {
+  const dir = filmId.split('').join('/');
+  const q = version ? `?v=${version}` : '';
+  const slugs = [slug, slug.replace(/-\d{4}$/, '')].filter((x, i, arr) => arr.indexOf(x) === i);
+  return slugs.map((sl) => `${POSTER_CDN}/${dir}/${filmId}-${sl}-0-${w}-0-${h}-crop.jpg${q}`);
 }
 
 export class LetterboxdError extends Error {
@@ -59,12 +71,16 @@ export function parseFilmsPage(html: string): Film[] {
     const link = attr(block, 'data-item-link') ?? `/film/${slug}/`;
     const ym = name.match(/^(.*) \((\d{4})\)$/);
     const ratingM = block.match(/\brated-(\d{1,2})\b/);
+    const decoded = decodeEntities(block);
+    const idM = decoded.match(/"uid":"film:(\d+)"/);
+    const verM = decoded.match(/"cacheBustingKey":"([a-z0-9]+)"/);
     films.push({
       slug,
       title: ym ? ym[1] : name,
       year: ym ? Number(ym[2]) : null,
       url: BASE + link,
       rating: ratingM ? Number(ratingM[1]) / 2 : null,
+      posters: idM ? posterUrls(idM[1], slug, verM?.[1] ?? null) : [],
     });
   }
   return films;

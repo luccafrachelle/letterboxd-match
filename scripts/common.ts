@@ -11,8 +11,8 @@ if (!a || !b) {
 
 const res = await compareUsers(a, b);
 for (const w of res.warnings) console.warn(`⚠ ${w}`);
-const file = out ?? `pelis_en_comun_${res.userA}_${res.userB}.xlsx`;
+const file = out ?? `para_ver_juntos_${res.userA}_${res.userB}.xlsx`;
 await writeFile(file, await buildWorkbook(res));
-console.log(`${res.userA}: ${res.totalA} pelis | ${res.userB}: ${res.totalB} pelis | en común: ${res.common.length}`);
+
 console.log(`watchlist ${res.userA}: ${res.watchlistTotalA} | watchlist ${res.userB}: ${res.watchlistTotalB} | para ver juntos: ${res.watchlistCommon.length}`);
 console.log(`Excel guardado en ${file}`);

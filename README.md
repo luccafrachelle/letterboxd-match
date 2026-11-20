@@ -1,6 +1,7 @@
-# letterboxd-match
+# Para ver juntos
 
-Compara dos perfiles de Letterboxd: pelis **vistas en común** y pelis que están en la **watchlist de los dos** (para ver juntos). Muestra las tablas (con filtro y orden) y exporta a Excel.
+Poné dos perfiles de Letterboxd y encontrá las pelis que están en la **watchlist de los dos**.
+Muestra los posters, deja buscar/ordenar, elegir una al azar 🎲 y descargar la lista en Excel.
 
 Link compartible: `/?a=usuario1&b=usuario2`.
 
@@ -13,7 +14,11 @@ npm run dev        # http://localhost:4321
 
 ## Deploy
 
-Astro SSR con `@astrojs/vercel`. Importar el repo en Vercel (framework Astro, sin configuración extra) o `npx vercel --prod`.
+Astro SSR con `@astrojs/vercel`:
+
+```bash
+npx vercel --prod
+```
 
 ## CLI
 
@@ -21,9 +26,7 @@ Astro SSR con `@astrojs/vercel`. Importar el repo en Vercel (framework Astro, si
 node scripts/common.ts usuarioA usuarioB [salida.xlsx]
 ```
 
-El Excel tiene las hojas "Vistas en común" (título, año, link, rating de cada uno), "Para ver juntos" y "Resumen".
+## Notas
 
-## Limitación conocida
-
-Letterboxd (Cloudflare) bloquea las consultas automáticas a `/<user>/films/page/2/` en adelante, así que de las
-pelis vistas solo se leen las primeras 72 de cada perfil; la web lo avisa. La watchlist se lee completa.
+- Las watchlists se leen completas desde los perfiles públicos.
+- Los posters salen del CDN de imágenes de Letterboxd; si alguno no se puede resolver se muestra un afiche generado.
