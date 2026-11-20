@@ -9,156 +9,336 @@ const b = Astro.url.searchParams.get('b') ?? '';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pelis en común · Letterboxd</title>
-    <style>
+    <meta name="description" content="Compará dos perfiles de Letterboxd: qué vieron los dos y qué pueden ver juntos." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 10'><circle cx='5' cy='5' r='5' fill='%23ff8000'/><circle cx='15' cy='5' r='5' fill='%2300e054'/><circle cx='25' cy='5' r='5' fill='%2340bcf4'/></svg>"
+    />
+    <style is:global>
       :root {
-        --bg: #14181c;
-        --panel: #1c2228;
-        --line: #2c3440;
-        --text: #e1e3e5;
-        --muted: #9ab;
-        --green: #00e054;
+        --bg: #0e1216;
+        --bg-2: #14181c;
+        --panel: rgba(28, 34, 40, 0.72);
+        --panel-solid: #1c2228;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.16);
+        --text: #eef1f4;
+        --muted: #8b99a8;
         --orange: #ff8000;
+        --green: #00e054;
         --blue: #40bcf4;
+        --radius: 16px;
         color-scheme: dark;
       }
       * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
       body {
         margin: 0;
-        font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        min-height: 100vh;
+        font: 15px/1.55 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
         background: var(--bg);
         color: var(--text);
+        overflow-x: hidden;
       }
-      main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
-      h1 { margin: 0 0 4px; font-size: 1.8rem; letter-spacing: -0.02em; }
-      .dots { display: inline-flex; gap: 4px; margin-right: 10px; vertical-align: middle; }
-      .dots i { width: 14px; height: 14px; border-radius: 50%; display: block; }
-      .sub { color: var(--muted); margin: 0 0 24px; }
-      .tabs { display: flex; gap: 4px; margin-bottom: -1px; }
-      .tabs button {
-        background: none; border: 1px solid transparent; border-bottom: none; color: var(--muted);
-        padding: 8px 14px; border-radius: 8px 8px 0 0; cursor: pointer; font: inherit;
+      /* Fondo con luces suaves de los tres colores */
+      .glow {
+        position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
+        background:
+          radial-gradient(35vmax 35vmax at 15% 10%, rgba(255, 128, 0, 0.13), transparent 60%),
+          radial-gradient(35vmax 35vmax at 85% 5%, rgba(64, 188, 244, 0.12), transparent 60%),
+          radial-gradient(40vmax 40vmax at 50% 100%, rgba(0, 224, 84, 0.08), transparent 60%);
+        animation: drift 22s ease-in-out infinite alternate;
       }
-      .tabs button[aria-selected='true'] { background: var(--panel); border-color: var(--line); color: var(--text); }
-      .view-tabs { margin-bottom: 12px; border-bottom: 1px solid var(--line); }
-      .view-tabs button span { color: var(--muted); font-variant-numeric: tabular-nums; }
-      .view-tabs button[aria-selected='true'] { border-bottom: 2px solid var(--green); }
-      #view-note { margin: 0 0 12px; color: var(--muted); font-size: 0.9rem; }
-      .rating-col[hidden] { display: none; }
-      form {
-        background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-        padding: 16px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr auto; align-items: end;
+      @keyframes drift { to { transform: translate3d(3vmax, 2vmax, 0) rotate(4deg); } }
+
+      main { max-width: 980px; margin: 0 auto; padding: 56px 16px 72px; }
+
+      header { text-align: center; margin-bottom: 32px; }
+      .logo { display: inline-flex; gap: 7px; margin-bottom: 18px; }
+      .logo i {
+        width: 18px; height: 18px; border-radius: 50%; display: block;
+        animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
       }
-      #warnings { margin: 16px 0 0; padding: 10px 14px; border: 1px solid #6b4e00; background: #2a2200; color: #ffd27a; border-radius: 8px; font-size: 0.9rem; }
+      .logo i:nth-child(1) { background: var(--orange); }
+      .logo i:nth-child(2) { background: var(--green); animation-delay: 0.08s; }
+      .logo i:nth-child(3) { background: var(--blue); animation-delay: 0.16s; }
+      .loading .logo i { animation: bounce 0.9s ease-in-out infinite; }
+      .loading .logo i:nth-child(2) { animation-delay: 0.15s; }
+      .loading .logo i:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes pop { from { transform: scale(0); } }
+      @keyframes bounce { 50% { transform: translateY(-9px); } }
+      h1 {
+        margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+        font-size: clamp(2.6rem, 7vw, 4.2rem); line-height: 1; letter-spacing: -0.01em;
+      }
+      h1 em {
+        font-style: italic;
+        background: linear-gradient(90deg, var(--orange), var(--green), var(--blue));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+      }
+      .sub { color: var(--muted); margin: 14px auto 0; max-width: 520px; font-size: 1.02rem; }
+
+      .card {
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      }
+      form { padding: 18px; display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px; align-items: end; }
+      label { display: grid; gap: 6px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .field { position: relative; }
+      .field span { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+      input {
+        font: inherit; font-size: 1rem; color: var(--text); background: rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--line-strong); border-radius: 10px; padding: 11px 12px 11px 30px; width: 100%;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      input::placeholder { color: #5c6874; }
+      input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 4px rgba(0, 224, 84, 0.15); }
+      #label-a input:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(255, 128, 0, 0.15); }
+      #label-b input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(64, 188, 244, 0.15); }
+      .swap {
+        width: 42px; height: 46px; border-radius: 10px; border: 1px solid var(--line-strong); background: transparent;
+        color: var(--muted); cursor: pointer; font-size: 1.1rem; transition: transform 0.35s, color 0.2s, border-color 0.2s;
+      }
+      .swap:hover { color: var(--text); border-color: var(--text); transform: rotate(180deg); }
+      button.primary {
+        font: inherit; font-weight: 700; background: var(--green); color: #04150a; border: 0;
+        border-radius: 10px; padding: 0 22px; height: 46px; cursor: pointer; white-space: nowrap;
+        transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+      }
+      button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -8px rgba(0, 224, 84, 0.6); }
+      button.primary:active { transform: translateY(1px); }
+      button.primary:disabled { filter: saturate(0.4) brightness(0.8); cursor: progress; transform: none; box-shadow: none; }
+
+      #status { margin: 18px 0 0; min-height: 1.5em; color: var(--muted); text-align: center; transition: opacity 0.3s; }
+      #status.error {
+        color: #ffb4b4; background: rgba(255, 80, 80, 0.08); border: 1px solid rgba(255, 80, 80, 0.25);
+        border-radius: 10px; padding: 10px 14px; animation: shake 0.4s;
+      }
+      @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+      /* Skeleton mientras carga */
+      #skeleton { margin-top: 24px; display: grid; gap: 10px; }
+      #skeleton[hidden] { display: none; }
+      .sk {
+        height: 46px; border-radius: 10px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+        background-size: 200% 100%; animation: shimmer 1.3s linear infinite;
+      }
+      .sk.big { height: 150px; }
+      @keyframes shimmer { to { background-position: -200% 0; } }
+
+      #warnings {
+        margin: 24px 0 0; padding: 12px 16px; border: 1px solid rgba(255, 196, 0, 0.3); background: rgba(255, 196, 0, 0.07);
+        color: #ffd98a; border-radius: 12px; font-size: 0.9rem;
+      }
       #warnings[hidden] { display: none; }
       #warnings ul { margin: 4px 0 0; padding-left: 18px; }
-      label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
-      input {
-        font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
-        border-radius: 6px; padding: 8px 10px; width: 100%;
-      }
-      input[type='file'] { padding: 6px; }
-      button.primary, a.btn {
-        font: inherit; font-weight: 600; background: var(--green); color: #0b1a10; border: 0;
-        border-radius: 6px; padding: 9px 16px; cursor: pointer; text-decoration: none; white-space: nowrap;
-      }
-      button.primary:disabled { opacity: 0.6; cursor: wait; }
-      .hint { grid-column: 1 / -1; margin: 0; font-size: 0.85rem; color: var(--muted); }
-      .hint a { color: var(--blue); }
-      #status { margin: 20px 0 0; min-height: 1.5em; color: var(--muted); }
-      #status.error { color: #ff6b6b; }
+
       #results[hidden] { display: none; }
-      .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
-      .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
-      .stat b { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; }
-      .stat span { color: var(--muted); font-size: 0.8rem; overflow-wrap: anywhere; }
-      .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
-      .toolbar input { flex: 1; }
-      .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); }
-      th {
-        position: sticky; top: 0; background: var(--panel); font-size: 0.8rem; text-transform: uppercase;
-        letter-spacing: 0.05em; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap;
+      .reveal { animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+      /* Resumen: Venn + números */
+      .summary { margin-top: 24px; padding: 22px; display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: center; }
+      .venn { width: 100%; height: auto; overflow: visible; }
+      .venn circle { mix-blend-mode: screen; transform-box: fill-box; transform-origin: center; animation: grow 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+      .venn circle:nth-of-type(2) { animation-delay: 0.12s; }
+      .venn text { fill: var(--text); font: 600 13px Inter, sans-serif; text-anchor: middle; }
+      .venn .big { font: 400 34px 'Instrument Serif', serif; paint-order: stroke; stroke: #11161b; stroke-width: 5px; stroke-linejoin: round; }
+      .venn text { paint-order: stroke; stroke: rgba(14,18,22,0.6); stroke-width: 3px; }
+      .venn .muted { fill: var(--muted); font-weight: 500; font-size: 11px; }
+      @keyframes grow { from { transform: scale(0.2); opacity: 0; } }
+      .numbers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .stat { padding: 14px 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--line); }
+      .stat b { display: block; font: 400 2.1rem/1.1 'Instrument Serif', serif; font-variant-numeric: tabular-nums; }
+      .stat span { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+      .stat.hl b { color: var(--green); }
+      .meter { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.07); margin-top: 10px; overflow: hidden; }
+      .meter i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--orange), var(--green), var(--blue)); transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+      /* Tabs con indicador deslizante */
+      .tabs { position: relative; display: flex; gap: 4px; margin: 28px 0 14px; padding: 4px; width: max-content; max-width: 100%; border-radius: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); }
+      .tabs button {
+        position: relative; z-index: 1; font: inherit; font-weight: 600; border: 0; background: none; color: var(--muted);
+        padding: 9px 16px; border-radius: 9px; cursor: pointer; transition: color 0.25s; white-space: nowrap;
       }
-      th[data-dir='asc']::after { content: ' ▲'; }
-      th[data-dir='desc']::after { content: ' ▼'; }
-      tbody tr:hover { background: #1f262d; }
-      td a { color: var(--text); text-decoration: none; }
-      td a:hover { color: var(--blue); }
+      .tabs button[aria-selected='true'] { color: var(--text); }
+      .tabs button .count { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 99px; background: rgba(255,255,255,0.08); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+      .tabs .ink { position: absolute; z-index: 0; top: 4px; bottom: 4px; border-radius: 9px; background: var(--panel-solid); border: 1px solid var(--line-strong); transition: left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+      #view-note { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
+      .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+      .search { position: relative; flex: 1; }
+      .search span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+      .search input { padding-left: 34px; }
+      .btn-dl {
+        display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 600; color: var(--text);
+        background: transparent; border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 16px; height: 46px; cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .btn-dl:hover { border-color: var(--green); background: rgba(0, 224, 84, 0.08); }
+      .btn-dl svg { transition: transform 0.25s; }
+      .btn-dl:hover svg { transform: translateY(2px); }
+
+      .table-wrap { overflow: auto; max-height: 70vh; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 11px 16px; text-align: left; }
+      th {
+        position: sticky; top: 0; z-index: 1; background: var(--panel-solid); font-size: 0.74rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); cursor: pointer; user-select: none;
+        white-space: nowrap; border-bottom: 1px solid var(--line-strong);
+      }
+      th:hover { color: var(--text); }
+      th[data-dir='asc']::after { content: ' ↑'; color: var(--green); }
+      th[data-dir='desc']::after { content: ' ↓'; color: var(--green); }
+      tbody tr { border-bottom: 1px solid var(--line); animation: rowin 0.45s ease both; }
+      tbody tr:hover { background: rgba(255, 255, 255, 0.035); }
+      @keyframes rowin { from { opacity: 0; transform: translateX(-8px); } }
+      td a { color: var(--text); text-decoration: none; font-weight: 500; transition: color 0.15s; }
+      td a::after { content: ' ↗'; opacity: 0; color: var(--muted); transition: opacity 0.15s; }
+      td a:hover { color: var(--green); }
+      td a:hover::after { opacity: 1; }
       td.num { font-variant-numeric: tabular-nums; color: var(--muted); }
-      td.stars { color: var(--green); white-space: nowrap; }
-      .empty { padding: 24px; text-align: center; color: var(--muted); }
-      @media (max-width: 640px) {
+      td.stars { white-space: nowrap; letter-spacing: 1px; }
+      td.stars.a { color: var(--orange); }
+      td.stars.b { color: var(--blue); }
+      td.stars .none { color: #46505a; letter-spacing: 0; }
+      .same { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0; color: var(--green); background: rgba(0, 224, 84, 0.12); vertical-align: 1px; }
+      .empty { padding: 36px; text-align: center; color: var(--muted); }
+      .rating-col[hidden] { display: none; }
+
+      footer { margin-top: 40px; text-align: center; color: #5c6874; font-size: 0.82rem; }
+      footer a { color: var(--muted); }
+
+      @media (max-width: 760px) {
+        main { padding-top: 36px; }
         form { grid-template-columns: 1fr; }
-        .stats { grid-template-columns: 1fr 1fr; }
-        .stats .stat:last-child { grid-column: 1 / -1; }
+        .swap { justify-self: center; transform: rotate(90deg); height: 36px; }
+        .swap:hover { transform: rotate(270deg); }
+        button.primary { width: 100%; }
+        .summary { grid-template-columns: 1fr; }
+        .venn { max-width: 300px; margin: 0 auto; }
         .toolbar { flex-direction: column; align-items: stretch; }
+        .btn-dl { justify-content: center; }
+        .tabs { width: 100%; }
+        .tabs button { flex: 1; padding: 9px 8px; font-size: 0.86rem; }
+        .tabs button .count { margin-left: 4px; padding: 1px 6px; }
+        th, td { padding: 10px 12px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
       }
     </style>
   </head>
   <body>
+    <div class="glow"></div>
     <main>
-      <h1>
-        <span class="dots"><i style="background:var(--orange)"></i><i style="background:var(--green)"></i><i style="background:var(--blue)"></i></span>
-        Pelis en común
-      </h1>
-      <p class="sub">Compará lo que vieron dos personas en Letterboxd, encontrá qué pueden ver juntos y descargalo en Excel.</p>
+      <header>
+        <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
+        <h1>Pelis <em>en común</em></h1>
+        <p class="sub">Poné dos perfiles de Letterboxd y mirá qué vieron los dos y qué pueden ver juntos.</p>
+      </header>
 
-      <form id="form-user">
-        <label>Usuario A <input name="a" placeholder="frache04 o link al perfil" value={a} required /></label>
-        <label>Usuario B <input name="b" placeholder="pedro_schiaff" value={b} required /></label>
+      <form id="form-user" class="card">
+        <label id="label-a">Persona 1
+          <span class="field"><span>@</span><input name="a" placeholder="usuario o link al perfil" value={a} required autocomplete="off" autocapitalize="off" spellcheck="false" /></span>
+        </label>
+        <button type="button" class="swap" id="swap" title="Intercambiar" aria-label="Intercambiar usuarios">⇄</button>
+        <label id="label-b">Persona 2
+          <span class="field"><span>@</span><input name="b" placeholder="usuario o link al perfil" value={b} required autocomplete="off" autocapitalize="off" spellcheck="false" /></span>
+        </label>
         <button class="primary" type="submit">Comparar</button>
-        <p class="hint">Lee los perfiles públicos de Letterboxd: pelis vistas y watchlist.</p>
       </form>
 
-      <div id="warnings" hidden></div>
       <p id="status" role="status"></p>
+      <div id="skeleton" hidden aria-hidden="true">
+        <div class="sk big"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+      </div>
+
+      <div id="warnings" hidden></div>
 
       <section id="results" hidden>
-        <div class="stats">
-          <div class="stat"><b id="s-common">0</b><span>en común</span></div>
-          <div class="stat"><b id="s-pct">0%</b><span>coincidencia</span></div>
-          <div class="stat"><b id="s-a">0</b><span id="s-a-label">vistas A</span></div>
-          <div class="stat"><b id="s-b">0</b><span id="s-b-label">vistas B</span></div>
-          <div class="stat"><b id="s-wl">0</b><span id="s-wl-label">para ver juntos</span></div>
+        <div class="summary card reveal">
+          <svg class="venn" viewBox="0 0 300 200" role="img" aria-label="Diagrama de pelis vistas en común">
+            <circle id="v-a" cx="105" cy="90" r="78" fill="rgba(255,128,0,0.35)" stroke="var(--orange)" stroke-width="1.5"></circle>
+            <circle id="v-b" cx="195" cy="90" r="78" fill="rgba(64,188,244,0.35)" stroke="var(--blue)" stroke-width="1.5"></circle>
+            <text id="v-a-name" x="70" y="174" class="muted"></text>
+            <text id="v-b-name" x="230" y="174" class="muted"></text>
+            <text id="v-a-only" x="70" y="96"></text>
+            <text id="v-b-only" x="230" y="96"></text>
+            <text id="v-both" x="150" y="100" class="big"></text>
+          </svg>
+          <div class="numbers">
+            <div class="stat hl"><b data-count id="s-common">0</b><span>vistas por los dos</span></div>
+            <div class="stat hl"><b data-count id="s-wl">0</b><span>para ver juntos 🍿</span></div>
+            <div class="stat"><b data-count id="s-a">0</b><span id="s-a-label">vistas</span></div>
+            <div class="stat"><b data-count id="s-b">0</b><span id="s-b-label">vistas</span></div>
+            <div class="stat" style="grid-column: 1 / -1">
+              <b id="s-pct">0%</b><span>de coincidencia (sobre quien vio menos)</span>
+              <div class="meter"><i id="meter"></i></div>
+            </div>
+          </div>
         </div>
-        <div class="tabs view-tabs" role="tablist">
-          <button role="tab" aria-selected="true" data-view="common">Vistas en común <span id="c-common"></span></button>
-          <button role="tab" aria-selected="false" data-view="watchlist">🍿 Para ver juntos <span id="c-wl"></span></button>
+
+        <div class="tabs" role="tablist">
+          <span class="ink" id="ink"></span>
+          <button role="tab" aria-selected="true" data-view="common">Vistas por los dos<span class="count" id="c-common"></span></button>
+          <button role="tab" aria-selected="false" data-view="watchlist">🍿 Para ver juntos<span class="count" id="c-wl"></span></button>
         </div>
         <p id="view-note"></p>
+
         <div class="toolbar">
-          <input id="filter" type="search" placeholder="Filtrar por título o año…" />
-          <a class="btn" id="download" href="#">⬇ Descargar Excel</a>
+          <div class="search"><span>⌕</span><input id="filter" type="search" placeholder="Filtrar por título o año…" /></div>
+          <button class="btn-dl" id="download" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Descargar Excel
+          </button>
         </div>
-        <div class="table-wrap">
+
+        <div class="card table-wrap">
           <table>
             <thead>
               <tr>
                 <th data-key="title">Título</th>
                 <th data-key="year">Año</th>
-                <th data-key="ratingA" id="th-a" class="rating-col">Rating A</th>
-                <th data-key="ratingB" id="th-b" class="rating-col">Rating B</th>
+                <th data-key="ratingA" id="th-a" class="rating-col">A</th>
+                <th data-key="ratingB" id="th-b" class="rating-col">B</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
       </section>
+
+      <footer>
+        Datos de perfiles públicos de <a href="https://letterboxd.com" target="_blank" rel="noopener">Letterboxd</a> ·
+        <a href="https://github.com/luccafrachelle/letterboxd-match" target="_blank" rel="noopener">código</a>
+      </footer>
     </main>
 
     <script>
       type Film = { title: string; year: number | null; url: string; ratingA: number | null; ratingB: number | null };
-      type Result = { warnings: string[]; userA: string; userB: string; totalA: number; totalB: number; watchlistTotalA: number; watchlistTotalB: number; common: Film[]; watchlistCommon: Film[] };
+      type Result = {
+        warnings: string[]; userA: string; userB: string; totalA: number; totalB: number;
+        watchlistTotalA: number; watchlistTotalB: number; common: Film[]; watchlistCommon: Film[];
+      };
 
       const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
       const status = $('status');
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let result: Result | null = null;
       let sortKey: keyof Film = 'title';
       let sortDir: 1 | -1 = 1;
       let view: 'common' | 'watchlist' = 'common';
 
-      const stars = (r: number | null) => (r == null ? '—' : '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : ''));
+      const stars = (r: number | null) =>
+        r == null ? '<span class="none">—</span>' : '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
       const esc = (s: string) =>
         s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
@@ -167,14 +347,34 @@ const b = Astro.url.searchParams.get('b') ?? '';
         status.className = error ? 'error' : '';
       }
 
+      function countUp(el: HTMLElement, to: number, suffix = '') {
+        if (reduced) return void (el.textContent = to + suffix);
+        const start = performance.now();
+        const dur = 900 + Math.min(to, 300) * 2;
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - start) / dur);
+          el.textContent = Math.round(to * (1 - Math.pow(1 - t, 3))) + suffix;
+          if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+
+      function moveInk() {
+        const sel = document.querySelector<HTMLElement>('.tabs [aria-selected=true]');
+        const ink = $('ink');
+        if (!sel) return;
+        ink.style.left = `${sel.offsetLeft}px`;
+        ink.style.width = `${sel.offsetWidth}px`;
+      }
+
       function render() {
         if (!result) return;
         const q = $<HTMLInputElement>('filter').value.trim().toLowerCase();
         const withRatings = view === 'common';
         document.querySelectorAll<HTMLElement>('.rating-col').forEach((th) => (th.hidden = !withRatings));
         $('view-note').textContent = withRatings
-          ? `Pelis que vieron ${result.userA} y ${result.userB}.`
-          : `Pelis que están en la watchlist de ${result.userA} y de ${result.userB}: las quieren ver los dos.`;
+          ? `Pelis que vieron @${result.userA} y @${result.userB}, con el puntaje de cada uno.`
+          : `Pelis que están en la watchlist de @${result.userA} y de @${result.userB}: las quieren ver los dos.`;
         const source = withRatings ? result.common : result.watchlistCommon;
         const rows = source
           .filter((f) => !q || f.title.toLowerCase().includes(q) || String(f.year ?? '').includes(q))
@@ -187,69 +387,147 @@ const b = Astro.url.searchParams.get('b') ?? '';
           });
         $('tbody').innerHTML = rows.length
           ? rows
-              .map(
-                (f) => `<tr>
-                  <td><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.title)}</a></td>
+              .map((f, i) => {
+                const same = withRatings && f.ratingA != null && f.ratingA === f.ratingB ? '<span class="same">mismo puntaje</span>' : '';
+                return `<tr style="animation-delay:${Math.min(i, 25) * 22}ms">
+                  <td><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.title)}</a>${same}</td>
                   <td class="num">${f.year ?? ''}</td>
-                  ${withRatings ? `<td class="stars">${stars(f.ratingA)}</td><td class="stars">${stars(f.ratingB)}</td>` : ''}
-                </tr>`,
-              )
+                  ${withRatings ? `<td class="stars a">${stars(f.ratingA)}</td><td class="stars b">${stars(f.ratingB)}</td>` : ''}
+                </tr>`;
+              })
               .join('')
-          : `<tr><td colspan="4" class="empty">${source.length ? 'Nada coincide con el filtro.' : withRatings ? 'No tienen pelis vistas en común 😢' : 'No hay pelis en la watchlist de los dos (o no se cargó la watchlist).'}</td></tr>`;
+          : `<tr><td colspan="4" class="empty">${
+              source.length ? 'Nada coincide con el filtro.' : withRatings ? 'No tienen pelis vistas en común 😢' : 'No hay pelis en la watchlist de los dos.'
+            }</td></tr>`;
         document.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) => {
           if (th.dataset.key === sortKey) th.dataset.dir = sortDir === 1 ? 'asc' : 'desc';
           else delete th.dataset.dir;
         });
       }
 
+      function drawVenn(r: Result) {
+        // Radios proporcionales a la raíz de la cantidad (área ∝ pelis); solapamiento según % en común.
+        const max = Math.max(r.totalA, r.totalB, 1);
+        const ra = 40 + 40 * Math.sqrt(r.totalA / max);
+        const rb = 40 + 40 * Math.sqrt(r.totalB / max);
+        const overlap = r.common.length / (Math.min(r.totalA, r.totalB) || 1);
+        let d = (ra + rb) * (1 - 0.75 * overlap) + 4;
+        // Escalar para que entre en el ancho del SVG (300) con margen.
+        const k = Math.min(1, 290 / (ra + d + rb));
+        const [sa, sb] = [ra * k, rb * k];
+        d *= k;
+        const cx = 150 + (sa - sb) / 2, ax = cx - d / 2, bx = cx + d / 2;
+        const cy = 90, labelY = cy + Math.max(sa, sb) + 18;
+        const set = (id: string, attrs: Record<string, string | number>) =>
+          Object.entries(attrs).forEach(([k, v]) => $(id).setAttribute(k, String(v)));
+        set('v-a', { cx: ax, r: sa });
+        set('v-b', { cx: bx, r: sb });
+        set('v-a-only', { x: ax - sa / 2.3 });
+        set('v-b-only', { x: bx + sb / 2.3 });
+        set('v-both', { x: (ax + sa + bx - sb) / 2 });
+        set('v-a-name', { x: ax, y: labelY });
+        set('v-b-name', { x: bx, y: labelY });
+        $('v-a-only').textContent = String(r.totalA - r.common.length);
+        $('v-b-only').textContent = String(r.totalB - r.common.length);
+        $('v-both').textContent = String(r.common.length);
+        $('v-a-name').textContent = `@${r.userA}`;
+        $('v-b-name').textContent = `@${r.userB}`;
+        // reiniciar animación
+        document.querySelectorAll<SVGElement>('.venn circle').forEach((c) => {
+          c.style.animation = 'none';
+          void c.getBoundingClientRect();
+          c.style.animation = '';
+        });
+      }
+
       function show(r: Result) {
         result = r;
         const min = Math.min(r.totalA, r.totalB) || 1;
-        $('s-common').textContent = String(r.common.length);
-        $('s-pct').textContent = `${Math.round((r.common.length / min) * 100)}%`;
-        $('s-a').textContent = String(r.totalA);
-        $('s-b').textContent = String(r.totalB);
-        $('s-a-label').textContent = `vistas por ${r.userA}`;
-        $('s-b-label').textContent = `vistas por ${r.userB}`;
-        $('th-a').textContent = `★ ${r.userA}`;
-        $('th-b').textContent = `★ ${r.userB}`;
-        $('s-wl').textContent = String(r.watchlistCommon.length);
-        $('c-common').textContent = `(${r.common.length})`;
-        $('c-wl').textContent = `(${r.watchlistCommon.length})`;
-        $('results').hidden = false;
+        const pct = Math.round((r.common.length / min) * 100);
+        $('s-a-label').textContent = `vistas por @${r.userA}`;
+        $('s-b-label').textContent = `vistas por @${r.userB}`;
+        $('th-a').textContent = `★ @${r.userA}`;
+        $('th-b').textContent = `★ @${r.userB}`;
+        $('c-common').textContent = String(r.common.length);
+        $('c-wl').textContent = String(r.watchlistCommon.length);
         const warn = $('warnings');
         warn.hidden = !r.warnings.length;
         warn.innerHTML = r.warnings.length
-          ? `⚠ Resultados incompletos:<ul>${r.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
+          ? `⚠ Resultado parcial:<ul>${r.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
           : '';
+        const res = $('results');
+        res.hidden = false;
+        res.querySelectorAll<HTMLElement>('.reveal').forEach((el) => {
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = '';
+        });
+        drawVenn(r);
+        countUp($('s-common'), r.common.length);
+        countUp($('s-wl'), r.watchlistCommon.length);
+        countUp($('s-a'), r.totalA);
+        countUp($('s-b'), r.totalB);
+        countUp($('s-pct'), pct, '%');
+        $('meter').style.width = '0';
+        requestAnimationFrame(() => requestAnimationFrame(() => ($('meter').style.width = `${pct}%`)));
         setStatus('');
+        moveInk();
         render();
       }
 
-      async function run(form: HTMLFormElement, req: () => Promise<Response>) {
+      const loadingMsgs = (a: string, b: string) => [
+        `Leyendo las pelis de @${a}…`,
+        `Leyendo las pelis de @${b}…`,
+        'Revisando las watchlists…',
+        'Cruzando listas…',
+      ];
+
+      async function run(form: HTMLFormElement, a: string, b: string, req: () => Promise<Response>) {
         const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
         btn.disabled = true;
-        setStatus('Buscando pelis… (puede tardar unos segundos si vieron muchas)');
+        btn.textContent = 'Comparando…';
+        document.body.classList.add('loading');
+        $('results').hidden = true;
+        $('warnings').hidden = true;
+        $('skeleton').hidden = false;
+        const msgs = loadingMsgs(a, b);
+        let i = 0;
+        setStatus(msgs[0]);
+        const timer = setInterval(() => setStatus(msgs[++i % msgs.length]), 1600);
         try {
           const res = await req();
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+          clearInterval(timer);
+          $('skeleton').hidden = true;
           show(data);
         } catch (e) {
-          $('results').hidden = true;
-          $('warnings').hidden = true;
+          clearInterval(timer);
+          $('skeleton').hidden = true;
           setStatus((e as Error).message, true);
         } finally {
+          document.body.classList.remove('loading');
           btn.disabled = false;
+          btn.textContent = 'Comparar';
         }
       }
 
-      $<HTMLFormElement>('form-user').addEventListener('submit', (ev) => {
+      const form = $<HTMLFormElement>('form-user');
+      form.addEventListener('submit', (ev) => {
         ev.preventDefault();
-        const fd = new FormData(ev.target as HTMLFormElement);
-        const params = new URLSearchParams({ a: String(fd.get('a')), b: String(fd.get('b')) });
+        const fd = new FormData(form);
+        const a = String(fd.get('a')).trim();
+        const b = String(fd.get('b')).trim();
+        const params = new URLSearchParams({ a, b });
         history.replaceState(null, '', `?${params}`);
-        run(ev.target as HTMLFormElement, () => fetch(`/api/common.json?${params}`));
+        const short = (s: string) => s.replace(/.*letterboxd\.com\//i, '').replace(/[/@].*$|^@/g, '') || s;
+        run(form, short(a), short(b), () => fetch(`/api/common.json?${params}`));
+      });
+
+      $('swap').addEventListener('click', () => {
+        const ia = form.elements.namedItem('a') as HTMLInputElement;
+        const ib = form.elements.namedItem('b') as HTMLInputElement;
+        [ia.value, ib.value] = [ib.value, ia.value];
       });
 
       $('filter').addEventListener('input', render);
@@ -258,9 +536,11 @@ const b = Astro.url.searchParams.get('b') ?? '';
           document.querySelectorAll('[role=tab][data-view]').forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
           view = tab.dataset.view as typeof view;
           if (view === 'watchlist' && (sortKey === 'ratingA' || sortKey === 'ratingB')) { sortKey = 'title'; sortDir = 1; }
+          moveInk();
           render();
         }),
       );
+      addEventListener('resize', moveInk);
       document.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) =>
         th.addEventListener('click', () => {
           const key = th.dataset.key as keyof Film;
@@ -270,25 +550,30 @@ const b = Astro.url.searchParams.get('b') ?? '';
         }),
       );
 
-      $('download').addEventListener('click', async (ev) => {
-        ev.preventDefault();
+      $('download').addEventListener('click', async () => {
         if (!result) return;
-        const res = await fetch('/api/excel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(result),
-        });
-        if (!res.ok) return setStatus('No se pudo generar el Excel', true);
-        const blob = await res.blob();
-        const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'pelis_en_comun.xlsx';
-        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
-        a.click();
-        URL.revokeObjectURL(a.href);
+        const btn = $<HTMLButtonElement>('download');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/excel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result),
+          });
+          if (!res.ok) return setStatus('No se pudo generar el Excel', true);
+          const blob = await res.blob();
+          const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'pelis_en_comun.xlsx';
+          const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        } finally {
+          btn.disabled = false;
+        }
       });
 
-      // Si la URL trae ?a=&b=, comparar directo (link compartible).
+      // Link compartible: si la URL trae ?a=&b=, comparar directo.
       const p = new URLSearchParams(location.search);
-      if (p.get('a') && p.get('b')) $<HTMLFormElement>('form-user').requestSubmit();
+      if (p.get('a') && p.get('b')) form.requestSubmit();
     </script>
   </body>
 </html>
