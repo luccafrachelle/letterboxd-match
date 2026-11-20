@@ -16,6 +16,9 @@ export interface CompareResult {
   userB: string;
   avatarA?: string | null;
   avatarB?: string | null;
+  /** Nombre visible en Letterboxd (puede diferir del usuario). */
+  nameA?: string | null;
+  nameB?: string | null;
   watchlistTotalA: number;
   watchlistTotalB: number;
   /** Pelis que están en la watchlist de los dos → para ver juntos. */
@@ -67,6 +70,8 @@ export async function compareUsers(rawA: string, rawB: string): Promise<CompareR
     userB,
     avatarA: a.avatar,
     avatarB: b.avatar,
+    nameA: a.name,
+    nameB: b.name,
     watchlistTotalA: a.films.length,
     watchlistTotalB: b.films.length,
     watchlistCommon: (await withPosters(commonFilms(a.films, b.films), (f) => f.posters)).map((f) => ({

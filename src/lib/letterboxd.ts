@@ -86,11 +86,42 @@ export function parseFilmsPage(html: string): Film[] {
   return films;
 }
 
-export function parseAvatar(html: string, username: string): string | null {
-  for (const m of html.matchAll(/<img src="(https:\/\/a\.ltrbxd\.com\/resized\/avatar\/[^"]+)" alt="([^"]*)"/g)) {
-    if (m[2].toLowerCase() === username.toLowerCase()) return m[1].replace(/-0-\d+-0-\d+-crop/, '-0-220-0-220-crop');
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Avatar en tamaño grande. Letterboxd usa su CDN (a.ltrbxd.com) o Gravatar;
+ * el avatar genérico por defecto se descarta (se muestra la inicial).
+ */
+function upscaleAvatar(src: string): string | null {
+  if (/^https:\/\/a\.ltrbxd\.com\/resized\/avatar\//.test(src)) {
+    return src.replace(/-0-\d+-0-\d+-crop/, '-0-220-0-220-crop');
+  }
+  if (/^https:\/\/(secure\.)?gravatar\.com\/avatar\//.test(src)) {
+    const u = new URL(src);
+    u.searchParams.set('size', '220');
+    // Sin Gravatar propio → 404 → la UI muestra la inicial en vez de la silueta genérica.
+    u.searchParams.set('default', '404');
+    return u.toString();
   }
   return null;
+}
+
+/**
+ * Datos del dueño del perfil, sacados del encabezado (`section.profile-header`):
+ * el avatar está en `<a class="avatar" href="/usuario/"><img ...></a>` y el nombre visible en el h1.
+ * El `alt` del avatar es el nombre visible, no el usuario, así que no se usa para matchear.
+ */
+export function parseProfile(html: string, username: string): { avatar: string | null; name: string | null } {
+  const start = html.indexOf('class="profile-header');
+  const header = start >= 0 ? html.slice(start, start + 6000) : html;
+  const user = escapeRe(username);
+  const linked = header.match(
+    new RegExp(`<a[^>]*class="avatar[^"]*"[^>]*href="/${user}/"[^>]*>\\s*<img[^>]*src="([^"]+)"`, 'i'),
+  );
+  const any = header.match(/<a[^>]*class="avatar[^"]*"[^>]*>\s*<img[^>]*src="([^"]+)"/i);
+  const avatar = upscaleAvatar(decodeEntities(linked?.[1] ?? any?.[1] ?? ''));
+  const nameM = header.match(new RegExp(`<h1[^>]*>\\s*<a href="/${user}/"[^>]*>([^<]+)</a>`, 'i'));
+  return { avatar, name: nameM ? decodeEntities(nameM[1].trim()) : null };
 }
 
 export function parseLastPage(html: string): number {
@@ -124,8 +155,9 @@ async function fetchPage(username: string, page: number, list: ListKind): Promis
 
 export interface ListResult {
   films: Film[];
-  /** Avatar del perfil (sale en la primera página). */
+  /** Avatar y nombre visible del perfil (salen en la primera página). */
   avatar: string | null;
+  name: string | null;
   /** Páginas leídas / totales. Si leídas < totales, Letterboxd cortó la lectura. */
   pagesRead: number;
   pagesTotal: number;
@@ -150,5 +182,5 @@ export async function fetchList(username: string, list: ListKind): Promise<ListR
   }
   const bySlug = new Map<string, Film>();
   for (const html of pages) for (const f of parseFilmsPage(html)) bySlug.set(f.slug, f);
-  return { films: [...bySlug.values()], avatar: parseAvatar(first, username), pagesRead: pages.length, pagesTotal: last };
+  return { films: [...bySlug.values()], ...parseProfile(first, username), pagesRead: pages.length, pagesTotal: last };
 }

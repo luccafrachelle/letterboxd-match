@@ -295,7 +295,7 @@ const b = Astro.url.searchParams.get('b') ?? '';
           <div class="amb b" id="amb-b"></div>
           <div class="who a">
             <h2><a id="name-a" target="_blank" rel="noopener"></a></h2>
-            <p><b id="wl-a"></b> en watchlist</p>
+            <p><span id="handle-a"></span><b id="wl-a"></b> en watchlist</p>
           </div>
           <div class="meet" id="meet">
             <div class="ph a" id="ph-a"></div>
@@ -304,7 +304,7 @@ const b = Astro.url.searchParams.get('b') ?? '';
           </div>
           <div class="who b">
             <h2><a id="name-b" target="_blank" rel="noopener"></a></h2>
-            <p><b id="wl-b"></b> en watchlist</p>
+            <p><span id="handle-b"></span><b id="wl-b"></b> en watchlist</p>
           </div>
         </div>
 
@@ -342,6 +342,7 @@ const b = Astro.url.searchParams.get('b') ?? '';
       type Film = { title: string; year: number | null; url: string; poster?: string | null };
       type Result = {
         warnings: string[]; userA: string; userB: string; avatarA?: string | null; avatarB?: string | null;
+        nameA?: string | null; nameB?: string | null;
         watchlistTotalA: number; watchlistTotalB: number; watchlistCommon: Film[];
       };
       type SortKey = 'title' | 'year';
@@ -384,11 +385,15 @@ const b = Astro.url.searchParams.get('b') ?? '';
       }, true);
       document.addEventListener('error', (e) => {
         const img = e.target as HTMLElement;
-        if (img instanceof HTMLImageElement && img.classList.contains('pst')) img.remove();
+        if (!(img instanceof HTMLImageElement)) return;
+        if (img.classList.contains('pst')) img.remove();
+        else if (img.classList.contains('av-img')) img.replaceWith(img.dataset.i ?? '');
       }, true);
 
       const avatar = (url: string | null | undefined, name: string) =>
-        url ? `<img src="${esc(url)}" alt="" referrerpolicy="no-referrer" />` : esc(name.slice(0, 1).toUpperCase());
+        url
+          ? `<img class="av-img" src="${esc(url)}" alt="" data-i="${esc(name.slice(0, 1).toUpperCase())}" referrerpolicy="no-referrer" />`
+          : esc(name.slice(0, 1).toUpperCase());
 
       function setStatus(msg: string, error = false) {
         status.textContent = msg;
@@ -496,15 +501,17 @@ const b = Astro.url.searchParams.get('b') ?? '';
       function show(r: Result) {
         result = r;
         document.body.classList.add('has-results');
-        for (const [k, user, url, wl] of [
-          ['a', r.userA, r.avatarA, r.watchlistTotalA],
-          ['b', r.userB, r.avatarB, r.watchlistTotalB],
+        for (const [k, user, url, wl, display] of [
+          ['a', r.userA, r.avatarA, r.watchlistTotalA, r.nameA],
+          ['b', r.userB, r.avatarB, r.watchlistTotalB, r.nameB],
         ] as const) {
           const name = $<HTMLAnchorElement>(`name-${k}`);
-          name.textContent = `@${user}`;
+          const differs = !!display && display.toLowerCase() !== user.toLowerCase();
+          name.textContent = differs ? display! : `@${user}`;
+          $(`handle-${k}`).textContent = differs ? `@${user} · ` : '';
           name.href = `https://letterboxd.com/${encodeURIComponent(user)}/watchlist/`;
           $(`wl-${k}`).textContent = String(wl);
-          $(`ph-${k}`).innerHTML = avatar(url, user);
+          $(`ph-${k}`).innerHTML = avatar(url, display || user);
           $(`amb-${k}`).style.backgroundImage = url ? `url("${url}")` : 'none';
           $(`amb-${k}`).style.backgroundColor = url ? '' : k === 'a' ? 'var(--orange)' : 'var(--blue)';
         }
