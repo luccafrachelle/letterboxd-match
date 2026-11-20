@@ -4,3 +4,4 @@ dist
 .vercel
 *.xlsx
 .DS_Store
+API_REQUEST.md
