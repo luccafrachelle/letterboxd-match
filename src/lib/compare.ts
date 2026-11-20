@@ -18,6 +18,8 @@ export interface CompareResult {
   warnings: string[];
   userA: string;
   userB: string;
+  avatarA?: string | null;
+  avatarB?: string | null;
   totalA: number;
   totalB: number;
   watchlistTotalA: number;
@@ -104,11 +106,15 @@ export async function compareUsers(rawA: string, rawB: string): Promise<CompareR
   const userA = normalizeUsername(rawA);
   const userB = normalizeUsername(rawB);
   const [a, b] = await Promise.all([cachedUser(userA), cachedUser(userB)]);
-  return buildResult(
-    userA,
-    userB,
-    { watched: a.watched.films, watchlist: a.watchlist.films },
-    { watched: b.watched.films, watchlist: b.watchlist.films },
-    [...partialWarnings(userA, a), ...partialWarnings(userB, b)],
-  );
+  return {
+    ...buildResult(
+      userA,
+      userB,
+      { watched: a.watched.films, watchlist: a.watchlist.films },
+      { watched: b.watched.films, watchlist: b.watchlist.films },
+      [...partialWarnings(userA, a), ...partialWarnings(userB, b)],
+    ),
+    avatarA: a.watched.avatar,
+    avatarB: b.watched.avatar,
+  };
 }

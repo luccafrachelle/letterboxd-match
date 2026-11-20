@@ -70,6 +70,13 @@ export function parseFilmsPage(html: string): Film[] {
   return films;
 }
 
+export function parseAvatar(html: string, username: string): string | null {
+  for (const m of html.matchAll(/<img src="(https:\/\/a\.ltrbxd\.com\/resized\/avatar\/[^"]+)" alt="([^"]*)"/g)) {
+    if (m[2].toLowerCase() === username.toLowerCase()) return m[1].replace(/-0-\d+-0-\d+-crop/, '-0-220-0-220-crop');
+  }
+  return null;
+}
+
 export function parseLastPage(html: string): number {
   const pages = [...html.matchAll(/\/(?:films|watchlist)\/page\/(\d+)\//g)].map((m) => Number(m[1]));
   return pages.length ? Math.max(1, ...pages) : 1;
@@ -101,6 +108,8 @@ async function fetchPage(username: string, page: number, list: ListKind): Promis
 
 export interface ListResult {
   films: Film[];
+  /** Avatar del perfil (sale en la primera página). */
+  avatar: string | null;
   /** Páginas leídas / totales. Si leídas < totales, Letterboxd cortó la lectura. */
   pagesRead: number;
   pagesTotal: number;
@@ -125,5 +134,5 @@ export async function fetchList(username: string, list: ListKind): Promise<ListR
   }
   const bySlug = new Map<string, Film>();
   for (const html of pages) for (const f of parseFilmsPage(html)) bySlug.set(f.slug, f);
-  return { films: [...bySlug.values()], pagesRead: pages.length, pagesTotal: last };
+  return { films: [...bySlug.values()], avatar: parseAvatar(first, username), pagesRead: pages.length, pagesTotal: last };
 }

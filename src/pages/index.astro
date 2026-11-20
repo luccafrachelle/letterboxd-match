@@ -22,214 +22,273 @@ const b = Astro.url.searchParams.get('b') ?? '';
     />
     <style is:global>
       :root {
-        --bg: #0e1216;
-        --bg-2: #14181c;
-        --panel: rgba(28, 34, 40, 0.72);
-        --panel-solid: #1c2228;
-        --line: rgba(255, 255, 255, 0.08);
-        --line-strong: rgba(255, 255, 255, 0.16);
+        --bg: #0d1014;
+        --surface: #151a1f;
+        --surface-2: #1b2127;
+        --line: rgba(255, 255, 255, 0.07);
+        --line-strong: rgba(255, 255, 255, 0.14);
         --text: #eef1f4;
-        --muted: #8b99a8;
+        --muted: #8593a1;
+        --faint: #55616d;
         --orange: #ff8000;
         --green: #00e054;
         --blue: #40bcf4;
-        --radius: 16px;
+        --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+        --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
         color-scheme: dark;
       }
       * { box-sizing: border-box; }
-      html { -webkit-text-size-adjust: 100%; }
       body {
-        margin: 0;
-        min-height: 100vh;
-        font: 15px/1.55 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        overflow-x: hidden;
+        margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+        font: 15px/1.55 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; overflow-x: hidden;
       }
-      /* Fondo con luces suaves de los tres colores */
       .glow {
         position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
         background:
-          radial-gradient(35vmax 35vmax at 15% 10%, rgba(255, 128, 0, 0.13), transparent 60%),
-          radial-gradient(35vmax 35vmax at 85% 5%, rgba(64, 188, 244, 0.12), transparent 60%),
-          radial-gradient(40vmax 40vmax at 50% 100%, rgba(0, 224, 84, 0.08), transparent 60%);
-        animation: drift 22s ease-in-out infinite alternate;
+          radial-gradient(32vmax 32vmax at 12% 8%, rgba(255, 128, 0, 0.1), transparent 60%),
+          radial-gradient(32vmax 32vmax at 88% 6%, rgba(64, 188, 244, 0.1), transparent 60%),
+          radial-gradient(40vmax 40vmax at 50% 105%, rgba(0, 224, 84, 0.06), transparent 60%);
+        animation: drift 24s ease-in-out infinite alternate;
       }
-      @keyframes drift { to { transform: translate3d(3vmax, 2vmax, 0) rotate(4deg); } }
+      @keyframes drift { to { transform: translate3d(3vmax, 2vmax, 0) rotate(3deg); } }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 
-      main { max-width: 980px; margin: 0 auto; padding: 56px 16px 72px; }
+      /* Barra superior */
+      .topbar { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); text-decoration: none; }
+      .dots { display: inline-flex; gap: 4px; }
+      .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+      .dots i:nth-child(1) { background: var(--orange); }
+      .dots i:nth-child(2) { background: var(--green); }
+      .dots i:nth-child(3) { background: var(--blue); }
+      .loading .dots i { animation: bounce 0.9s ease-in-out infinite; }
+      .loading .dots i:nth-child(2) { animation-delay: 0.15s; }
+      .loading .dots i:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes bounce { 50% { transform: translateY(-6px); } }
+      .topbar nav a { color: var(--muted); text-decoration: none; font-size: 0.88rem; }
+      .topbar nav a:hover { color: var(--text); }
 
-      header { text-align: center; margin-bottom: 32px; }
-      .logo { display: inline-flex; gap: 7px; margin-bottom: 18px; }
-      .logo i {
-        width: 18px; height: 18px; border-radius: 50%; display: block;
-        animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-      }
-      .logo i:nth-child(1) { background: var(--orange); }
-      .logo i:nth-child(2) { background: var(--green); animation-delay: 0.08s; }
-      .logo i:nth-child(3) { background: var(--blue); animation-delay: 0.16s; }
-      .loading .logo i { animation: bounce 0.9s ease-in-out infinite; }
-      .loading .logo i:nth-child(2) { animation-delay: 0.15s; }
-      .loading .logo i:nth-child(3) { animation-delay: 0.3s; }
-      @keyframes pop { from { transform: scale(0); } }
-      @keyframes bounce { 50% { transform: translateY(-9px); } }
+      /* Hero: grande al inicio, compacto con resultados */
+      .hero { text-align: center; padding: 9vh 0 28px; transition: padding 0.6s var(--ease); }
+      .has-results .hero { padding: 16px 0 20px; }
       h1 {
-        margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
-        font-size: clamp(2.6rem, 7vw, 4.2rem); line-height: 1; letter-spacing: -0.01em;
+        margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; line-height: 0.95;
+        font-size: clamp(3rem, 8vw, 5.4rem); letter-spacing: -0.015em; transition: font-size 0.6s var(--ease);
       }
+      .has-results h1 { font-size: clamp(2.2rem, 5vw, 3rem); }
       h1 em {
-        font-style: italic;
-        background: linear-gradient(90deg, var(--orange), var(--green), var(--blue));
+        font-style: italic; background: linear-gradient(90deg, var(--orange), var(--green) 55%, var(--blue));
         -webkit-background-clip: text; background-clip: text; color: transparent;
       }
-      .sub { color: var(--muted); margin: 14px auto 0; max-width: 520px; font-size: 1.02rem; }
+      .sub { color: var(--muted); margin: 16px auto 0; max-width: 480px; font-size: 1.05rem; transition: opacity 0.4s, margin 0.6s var(--ease); }
+      .has-results .sub { display: none; }
 
-      .card {
-        background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      form {
+        max-width: 760px; margin: 32px auto 0; padding: 8px; display: flex; align-items: center; gap: 6px;
+        background: var(--surface); border: 1px solid var(--line-strong); border-radius: 18px;
+        box-shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.8);
       }
-      form { padding: 18px; display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 12px; align-items: end; }
-      label { display: grid; gap: 6px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-      .field { position: relative; }
-      .field span { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+      .has-results form { margin-top: 20px; }
+      .field { flex: 1; position: relative; display: flex; align-items: center; min-width: 0; }
+      .field .pin { position: absolute; left: 14px; width: 9px; height: 9px; border-radius: 50%; }
+      #field-a .pin { background: var(--orange); }
+      #field-b .pin { background: var(--blue); }
       input {
-        font: inherit; font-size: 1rem; color: var(--text); background: rgba(0, 0, 0, 0.28);
-        border: 1px solid var(--line-strong); border-radius: 10px; padding: 11px 12px 11px 30px; width: 100%;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        font: inherit; font-size: 1rem; color: var(--text); background: transparent; width: 100%;
+        border: 1px solid transparent; border-radius: 12px; padding: 12px 12px 12px 32px; transition: background 0.2s, border-color 0.2s;
       }
-      input::placeholder { color: #5c6874; }
-      input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 4px rgba(0, 224, 84, 0.15); }
-      #label-a input:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(255, 128, 0, 0.15); }
-      #label-b input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(64, 188, 244, 0.15); }
+      input::placeholder { color: var(--faint); }
+      input:hover { background: rgba(255, 255, 255, 0.03); }
+      input:focus { outline: none; background: rgba(0, 0, 0, 0.25); border-color: var(--line-strong); }
       .swap {
-        width: 42px; height: 46px; border-radius: 10px; border: 1px solid var(--line-strong); background: transparent;
-        color: var(--muted); cursor: pointer; font-size: 1.1rem; transition: transform 0.35s, color 0.2s, border-color 0.2s;
+        flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface-2);
+        color: var(--muted); cursor: pointer; font-size: 0.95rem; transition: transform 0.4s var(--ease), color 0.2s;
       }
-      .swap:hover { color: var(--text); border-color: var(--text); transform: rotate(180deg); }
+      .swap:hover { color: var(--text); transform: rotate(180deg); }
       button.primary {
-        font: inherit; font-weight: 700; background: var(--green); color: #04150a; border: 0;
-        border-radius: 10px; padding: 0 22px; height: 46px; cursor: pointer; white-space: nowrap;
-        transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+        flex: none; font: inherit; font-weight: 700; background: var(--green); color: #04150a; border: 0; border-radius: 12px;
+        padding: 0 24px; height: 46px; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
       }
-      button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -8px rgba(0, 224, 84, 0.6); }
-      button.primary:active { transform: translateY(1px); }
+      button.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 28px -10px rgba(0, 224, 84, 0.7); }
       button.primary:disabled { filter: saturate(0.4) brightness(0.8); cursor: progress; transform: none; box-shadow: none; }
 
-      #status { margin: 18px 0 0; min-height: 1.5em; color: var(--muted); text-align: center; transition: opacity 0.3s; }
-      #status.error {
-        color: #ffb4b4; background: rgba(255, 80, 80, 0.08); border: 1px solid rgba(255, 80, 80, 0.25);
-        border-radius: 10px; padding: 10px 14px; animation: shake 0.4s;
-      }
+      #status { margin: 18px auto 0; max-width: 760px; min-height: 1.5em; color: var(--muted); text-align: center; }
+      #status.error { color: #ffb4b4; background: rgba(255, 80, 80, 0.08); border: 1px solid rgba(255, 80, 80, 0.25); border-radius: 12px; padding: 10px 14px; animation: shake 0.4s; }
       @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
-      /* Skeleton mientras carga */
-      #skeleton { margin-top: 24px; display: grid; gap: 10px; }
+      /* Skeleton */
+      #skeleton { display: grid; gap: 14px; margin-top: 8px; }
       #skeleton[hidden] { display: none; }
-      .sk {
-        height: 46px; border-radius: 10px;
-        background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
-        background-size: 200% 100%; animation: shimmer 1.3s linear infinite;
-      }
-      .sk.big { height: 150px; }
+      .sk { border-radius: 16px; background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+      .sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+      .sk-grid .sk { aspect-ratio: 2 / 3; }
       @keyframes shimmer { to { background-position: -200% 0; } }
 
-      #warnings {
-        margin: 24px 0 0; padding: 12px 16px; border: 1px solid rgba(255, 196, 0, 0.3); background: rgba(255, 196, 0, 0.07);
-        color: #ffd98a; border-radius: 12px; font-size: 0.9rem;
-      }
-      #warnings[hidden] { display: none; }
-      #warnings ul { margin: 4px 0 0; padding-left: 18px; }
-
       #results[hidden] { display: none; }
-      .reveal { animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-      @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+      .reveal { animation: rise 0.7s var(--ease) both; }
+      @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
 
-      /* Resumen: Venn + números */
-      .summary { margin-top: 24px; padding: 22px; display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: center; }
-      .venn { width: 100%; height: auto; overflow: visible; }
-      .venn circle { mix-blend-mode: screen; transform-box: fill-box; transform-origin: center; animation: grow 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
-      .venn circle:nth-of-type(2) { animation-delay: 0.12s; }
-      .venn text { fill: var(--text); font: 600 13px Inter, sans-serif; text-anchor: middle; }
-      .venn .big { font: 400 34px 'Instrument Serif', serif; paint-order: stroke; stroke: #11161b; stroke-width: 5px; stroke-linejoin: round; }
-      .venn text { paint-order: stroke; stroke: rgba(14,18,22,0.6); stroke-width: 3px; }
-      .venn .muted { fill: var(--muted); font-weight: 500; font-size: 11px; }
-      @keyframes grow { from { transform: scale(0.2); opacity: 0; } }
-      .numbers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-      .stat { padding: 14px 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--line); }
-      .stat b { display: block; font: 400 2.1rem/1.1 'Instrument Serif', serif; font-variant-numeric: tabular-nums; }
-      .stat span { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
-      .stat.hl b { color: var(--green); }
-      .meter { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.07); margin-top: 10px; overflow: hidden; }
-      .meter i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--orange), var(--green), var(--blue)); transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
-
-      /* Tabs con indicador deslizante */
-      .tabs { position: relative; display: flex; gap: 4px; margin: 28px 0 14px; padding: 4px; width: max-content; max-width: 100%; border-radius: 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--line); }
-      .tabs button {
-        position: relative; z-index: 1; font: inherit; font-weight: 600; border: 0; background: none; color: var(--muted);
-        padding: 9px 16px; border-radius: 9px; cursor: pointer; transition: color 0.25s; white-space: nowrap;
+      /* Versus: fotos de perfil que se encuentran */
+      .versus {
+        position: relative; overflow: hidden; border-radius: 22px; border: 1px solid var(--line);
+        background: var(--surface); padding: 34px 24px 28px; margin-top: 8px;
+        display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
       }
+      .versus .amb { position: absolute; top: -30%; width: 55%; height: 160%; background-size: cover; background-position: center; filter: blur(60px) saturate(1.4); opacity: 0.28; pointer-events: none; }
+      .versus .amb.a { left: -10%; }
+      .versus .amb.b { right: -10%; }
+      .versus::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(13,16,20,0.55)); pointer-events: none; }
+      .who { position: relative; z-index: 1; }
+      .who.a { text-align: right; }
+      .who h2 { margin: 0; font: 400 clamp(1.5rem, 3vw, 2.1rem)/1.1 'Instrument Serif', serif; overflow-wrap: anywhere; }
+      .who h2 a { color: inherit; text-decoration: none; }
+      .who h2 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+      .who p { margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+      .who p b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      .meet { position: relative; z-index: 1; width: 300px; height: 170px; }
+      .meet .ph {
+        position: absolute; top: 15px; width: 140px; height: 140px; border-radius: 50%; overflow: hidden;
+        background: var(--surface-2); display: grid; place-items: center;
+        font: 400 3.2rem 'Instrument Serif', serif; color: var(--text);
+        transition: transform 1.1s var(--spring);
+      }
+      .meet .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .meet .ph.a { left: 0; box-shadow: 0 0 0 3px var(--orange), 0 18px 40px -12px rgba(255, 128, 0, 0.5); transform: translateX(-90px) scale(0.85); }
+      .meet .ph.b { right: 0; box-shadow: 0 0 0 3px var(--blue), 0 18px 40px -12px rgba(64, 188, 244, 0.5); transform: translateX(90px) scale(0.85); }
+      .meet.go .ph.a { transform: translateX(var(--shift)) scale(1); }
+      .meet.go .ph.b { transform: translateX(calc(var(--shift) * -1)) scale(1); }
+      .meet .ph.b { z-index: 1; }
+      .meet .badge {
+        position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0);
+        min-width: 74px; height: 74px; padding: 0 10px; border-radius: 99px; display: grid; place-items: center; text-align: center;
+        background: var(--bg); border: 2px solid var(--green); box-shadow: 0 0 0 6px rgba(0, 224, 84, 0.12), 0 10px 30px -8px rgba(0,0,0,0.8);
+        transition: transform 0.6s var(--spring) 0.75s;
+      }
+      .meet.go .badge { transform: translate(-50%, -50%) scale(1); }
+      .meet .badge b { display: block; font: 400 2rem/1 'Instrument Serif', serif; color: var(--green); }
+      .meet .badge span { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+      .meet .badge::before { content: ''; position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--green); opacity: 0; }
+      .meet.go .badge::before { animation: ping 2.4s ease-out 1.4s infinite; }
+      @keyframes ping { 0% { transform: scale(1); opacity: 0.6; } 80%, 100% { transform: scale(1.5); opacity: 0; } }
+
+      /* Números */
+      .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+      .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+      .tile b { display: block; font: 400 2.3rem/1 'Instrument Serif', serif; font-variant-numeric: tabular-nums; }
+      .tile span { display: block; margin-top: 6px; color: var(--muted); font-size: 0.84rem; }
+      .tile.g b { color: var(--green); }
+      .meter { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.07); margin-top: 10px; overflow: hidden; }
+      .meter i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--orange), var(--green), var(--blue)); transition: width 1.3s var(--ease) 0.3s; }
+
+      #warnings { margin-top: 12px; padding: 10px 14px; border-radius: 12px; font-size: 0.86rem; color: #ffd98a; background: rgba(255, 196, 0, 0.06); border: 1px solid rgba(255, 196, 0, 0.22); }
+      #warnings[hidden] { display: none; }
+
+      /* Barra de controles */
+      .controls { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 28px; padding: 10px 0; background: linear-gradient(var(--bg) 70%, transparent); }
+      .tabs { position: relative; display: flex; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+      .tabs button { position: relative; z-index: 1; font: inherit; font-weight: 600; font-size: 0.9rem; border: 0; background: none; color: var(--muted); padding: 8px 14px; border-radius: 9px; cursor: pointer; transition: color 0.25s; white-space: nowrap; }
       .tabs button[aria-selected='true'] { color: var(--text); }
-      .tabs button .count { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 99px; background: rgba(255,255,255,0.08); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
-      .tabs .ink { position: absolute; z-index: 0; top: 4px; bottom: 4px; border-radius: 9px; background: var(--panel-solid); border: 1px solid var(--line-strong); transition: left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1); }
-
-      #view-note { margin: 0 0 12px; color: var(--muted); font-size: 0.92rem; }
-      .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-      .search { position: relative; flex: 1; }
-      .search span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
-      .search input { padding-left: 34px; }
-      .btn-dl {
-        display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 600; color: var(--text);
-        background: transparent; border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 16px; height: 46px; cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
+      .tabs .count { margin-left: 6px; font-variant-numeric: tabular-nums; color: var(--faint); }
+      .tabs button[aria-selected='true'] .count { color: var(--green); }
+      .tabs .ink { position: absolute; top: 4px; bottom: 4px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line-strong); transition: left 0.4s var(--ease), width 0.4s var(--ease); }
+      .search { position: relative; flex: 1; min-width: 140px; }
+      .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+      .search input { padding-left: 36px; background: var(--surface); border-color: var(--line); height: 44px; }
+      select {
+        font: inherit; font-size: 0.9rem; color: var(--text); height: 44px; padding: 0 34px 0 12px; border-radius: 12px; cursor: pointer;
+        background: var(--surface) url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%238593a1' fill='none' stroke-width='1.5'/></svg>") no-repeat right 12px center;
+        border: 1px solid var(--line); appearance: none;
       }
-      .btn-dl:hover { border-color: var(--green); background: rgba(0, 224, 84, 0.08); }
-      .btn-dl svg { transition: transform 0.25s; }
-      .btn-dl:hover svg { transform: translateY(2px); }
+      .seg { display: flex; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+      .seg button { width: 36px; height: 34px; border: 0; border-radius: 8px; background: none; color: var(--faint); cursor: pointer; display: grid; place-items: center; transition: color 0.2s, background 0.2s; }
+      .seg button[aria-pressed='true'] { background: var(--surface-2); color: var(--text); }
+      .btn-dl { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-weight: 600; font-size: 0.9rem; color: #04150a; background: var(--green); border: 0; border-radius: 12px; padding: 0 16px; height: 44px; cursor: pointer; transition: transform 0.15s, box-shadow 0.2s; }
+      .btn-dl:hover { transform: translateY(-1px); box-shadow: 0 10px 28px -10px rgba(0, 224, 84, 0.7); }
+      .btn-dl:disabled { opacity: 0.6; cursor: progress; }
+      #view-note { margin: 4px 0 16px; color: var(--muted); font-size: 0.9rem; }
 
-      .table-wrap { overflow: auto; max-height: 70vh; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 11px 16px; text-align: left; }
-      th {
-        position: sticky; top: 0; z-index: 1; background: var(--panel-solid); font-size: 0.74rem; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); cursor: pointer; user-select: none;
-        white-space: nowrap; border-bottom: 1px solid var(--line-strong);
+      /* Grilla de "posters" generados */
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 22px 16px; }
+      .film { display: block; color: inherit; text-decoration: none; animation: cardin 0.55s var(--ease) both; }
+      @keyframes cardin { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
+      .poster {
+        position: relative; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; padding: 12px;
+        display: flex; flex-direction: column; justify-content: flex-end;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 10px 24px -14px rgba(0,0,0,0.9);
+        transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
       }
-      th:hover { color: var(--text); }
-      th[data-dir='asc']::after { content: ' ↑'; color: var(--green); }
-      th[data-dir='desc']::after { content: ' ↓'; color: var(--green); }
-      tbody tr { border-bottom: 1px solid var(--line); animation: rowin 0.45s ease both; }
-      tbody tr:hover { background: rgba(255, 255, 255, 0.035); }
+      .poster::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 70% at 20% 0%, rgba(255,255,255,0.18), transparent 55%), linear-gradient(180deg, transparent 45%, rgba(0,0,0,0.6)); }
+      .poster::after { content: ''; position: absolute; inset: 0; opacity: 0.22; mix-blend-mode: overlay; pointer-events: none;
+        background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+      .poster .t, .poster .yr, .poster .go, .same-tag { z-index: 1; }
+      .poster .yr { position: absolute; top: 10px; right: 11px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: rgba(255,255,255,0.75); }
+      .poster .t { position: relative; font: 400 1.32rem/1.05 'Instrument Serif', serif; color: #fff; text-wrap: balance; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+      .poster .go { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.8rem; font-weight: 600; color: #fff; background: rgba(0,0,0,0.45); opacity: 0; transition: opacity 0.25s; backdrop-filter: blur(2px); }
+      .film:hover .poster { transform: translateY(-5px) rotate(-0.6deg); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 22px 40px -18px rgba(0,0,0,0.95); }
+      .film:hover .go { opacity: 1; }
+      .same-tag { position: absolute; top: 9px; left: 9px; z-index: 1; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #04150a; background: var(--green); padding: 2px 7px; border-radius: 99px; }
+      .rates { margin-top: 9px; display: grid; gap: 3px; }
+      .rate { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; letter-spacing: 1px; white-space: nowrap; }
+      .rate .av { flex: none; width: 18px; height: 18px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 0.6rem; letter-spacing: 0; font-weight: 700; }
+      .rate .av img { width: 100%; height: 100%; object-fit: cover; }
+      .rate.a { color: var(--orange); }
+      .rate.b { color: var(--blue); }
+      .rate.a .av { box-shadow: 0 0 0 1.5px var(--orange); background: rgba(255,128,0,0.2); }
+      .rate.b .av { box-shadow: 0 0 0 1.5px var(--blue); background: rgba(64,188,244,0.2); }
+      .rate .none { color: var(--faint); letter-spacing: 0; }
+      .film .meta { margin-top: 8px; font-size: 0.8rem; color: var(--muted); }
+
+      /* Vista lista */
+      .list { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); }
+      .list table { width: 100%; border-collapse: collapse; }
+      .list th, .list td { padding: 11px 16px; text-align: left; }
+      .list th { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+      .list tr + tr td { border-top: 1px solid var(--line); }
+      .list tbody tr { animation: rowin 0.45s ease both; }
+      .list tbody tr:hover { background: rgba(255,255,255,0.025); }
       @keyframes rowin { from { opacity: 0; transform: translateX(-8px); } }
-      td a { color: var(--text); text-decoration: none; font-weight: 500; transition: color 0.15s; }
-      td a::after { content: ' ↗'; opacity: 0; color: var(--muted); transition: opacity 0.15s; }
-      td a:hover { color: var(--green); }
-      td a:hover::after { opacity: 1; }
-      td.num { font-variant-numeric: tabular-nums; color: var(--muted); }
-      td.stars { white-space: nowrap; letter-spacing: 1px; }
-      td.stars.a { color: var(--orange); }
-      td.stars.b { color: var(--blue); }
-      td.stars .none { color: #46505a; letter-spacing: 0; }
-      .same { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0; color: var(--green); background: rgba(0, 224, 84, 0.12); vertical-align: 1px; }
-      .empty { padding: 36px; text-align: center; color: var(--muted); }
-      .rating-col[hidden] { display: none; }
+      .list td a { color: var(--text); text-decoration: none; font-weight: 500; }
+      .list td a:hover { color: var(--green); }
+      .list .sw { display: inline-block; width: 10px; height: 14px; border-radius: 2px; margin-right: 10px; vertical-align: -2px; }
+      .list td.num { color: var(--muted); font-variant-numeric: tabular-nums; }
+      .list td.st { white-space: nowrap; letter-spacing: 1px; }
+      .list td.st.a { color: var(--orange); }
+      .list td.st.b { color: var(--blue); }
+      .list .th-av { display: inline-flex; align-items: center; gap: 6px; }
+      .list .th-av img, .list .th-av i { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+      .empty { padding: 48px 16px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+      .empty b { display: block; font: 400 2rem 'Instrument Serif', serif; color: var(--text); margin-bottom: 4px; }
 
-      footer { margin-top: 40px; text-align: center; color: #5c6874; font-size: 0.82rem; }
+      footer { margin: 56px 0 36px; text-align: center; color: var(--faint); font-size: 0.82rem; }
       footer a { color: var(--muted); }
 
-      @media (max-width: 760px) {
-        main { padding-top: 36px; }
-        form { grid-template-columns: 1fr; }
-        .swap { justify-self: center; transform: rotate(90deg); height: 36px; }
+      @media (min-width: 621px) and (max-width: 980px) {
+        .btn-dl { padding: 0 13px; }
+        .btn-dl .dl-txt { display: none; }
+      }
+      @media (max-width: 860px) {
+        .tiles { grid-template-columns: repeat(2, 1fr); }
+        .controls .tabs { order: -1; }
+        .versus { grid-template-columns: 1fr; text-align: center; padding: 26px 16px; }
+        .who.a, .who.b { text-align: center; }
+        .who.a { order: 0; } .meet { order: 1; margin: 0 auto; } .who.b { order: 2; }
+      }
+      @media (max-width: 620px) {
+        .wrap { padding: 0 14px; }
+        .hero { padding-top: 5vh; }
+        form { flex-direction: column; align-items: stretch; padding: 10px; border-radius: 16px; }
+        .swap { align-self: center; transform: rotate(90deg); }
         .swap:hover { transform: rotate(270deg); }
         button.primary { width: 100%; }
-        .summary { grid-template-columns: 1fr; }
-        .venn { max-width: 300px; margin: 0 auto; }
-        .toolbar { flex-direction: column; align-items: stretch; }
-        .btn-dl { justify-content: center; }
-        .tabs { width: 100%; }
-        .tabs button { flex: 1; padding: 9px 8px; font-size: 0.86rem; }
-        .tabs button .count { margin-left: 4px; padding: 1px 6px; }
-        th, td { padding: 10px 12px; }
+        .meet { transform: scale(0.8); margin: -12px auto; }
+        .controls { position: static; }
+        .tabs, .search { width: 100%; flex: none; }
+        .tabs button { flex: 1; padding: 8px 6px; font-size: 0.85rem; }
+        select { flex: 1; }
+        .btn-dl { flex: 1; justify-content: center; }
+        .grid { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
+        .list th, .list td { padding: 10px 10px; }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -238,274 +297,322 @@ const b = Astro.url.searchParams.get('b') ?? '';
   </head>
   <body>
     <div class="glow"></div>
-    <main>
-      <header>
-        <div class="logo" aria-hidden="true"><i></i><i></i><i></i></div>
-        <h1>Pelis <em>en común</em></h1>
-        <p class="sub">Poné dos perfiles de Letterboxd y mirá qué vieron los dos y qué pueden ver juntos.</p>
-      </header>
-
-      <form id="form-user" class="card">
-        <label id="label-a">Persona 1
-          <span class="field"><span>@</span><input name="a" placeholder="usuario o link al perfil" value={a} required autocomplete="off" autocapitalize="off" spellcheck="false" /></span>
-        </label>
-        <button type="button" class="swap" id="swap" title="Intercambiar" aria-label="Intercambiar usuarios">⇄</button>
-        <label id="label-b">Persona 2
-          <span class="field"><span>@</span><input name="b" placeholder="usuario o link al perfil" value={b} required autocomplete="off" autocapitalize="off" spellcheck="false" /></span>
-        </label>
-        <button class="primary" type="submit">Comparar</button>
-      </form>
-
-      <p id="status" role="status"></p>
-      <div id="skeleton" hidden aria-hidden="true">
-        <div class="sk big"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="brand" href="/"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>Pelis en común</a>
+        <nav><a href="https://github.com/luccafrachelle/letterboxd-match" target="_blank" rel="noopener">GitHub ↗</a></nav>
       </div>
 
-      <div id="warnings" hidden></div>
+      <section class="hero">
+        <h1>¿Qué vieron <em>los dos?</em></h1>
+        <p class="sub">Poné dos perfiles de Letterboxd: te muestro las pelis que tienen en común y las que pueden ver juntos.</p>
+        <form id="form-user">
+          <label class="field" id="field-a"><span class="pin"></span><input name="a" aria-label="Usuario 1" placeholder="Usuario o link al perfil" value={a} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+          <button type="button" class="swap" id="swap" title="Intercambiar" aria-label="Intercambiar usuarios">⇄</button>
+          <label class="field" id="field-b"><span class="pin"></span><input name="b" aria-label="Usuario 2" placeholder="Otro usuario" value={b} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+          <button class="primary" type="submit">Comparar</button>
+        </form>
+        <p id="status" role="status"></p>
+      </section>
+
+      <div id="skeleton" hidden aria-hidden="true">
+        <div class="sk" style="height:220px"></div>
+        <div class="sk-grid"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+      </div>
 
       <section id="results" hidden>
-        <div class="summary card reveal">
-          <svg class="venn" viewBox="0 0 300 200" role="img" aria-label="Diagrama de pelis vistas en común">
-            <circle id="v-a" cx="105" cy="90" r="78" fill="rgba(255,128,0,0.35)" stroke="var(--orange)" stroke-width="1.5"></circle>
-            <circle id="v-b" cx="195" cy="90" r="78" fill="rgba(64,188,244,0.35)" stroke="var(--blue)" stroke-width="1.5"></circle>
-            <text id="v-a-name" x="70" y="174" class="muted"></text>
-            <text id="v-b-name" x="230" y="174" class="muted"></text>
-            <text id="v-a-only" x="70" y="96"></text>
-            <text id="v-b-only" x="230" y="96"></text>
-            <text id="v-both" x="150" y="100" class="big"></text>
-          </svg>
-          <div class="numbers">
-            <div class="stat hl"><b data-count id="s-common">0</b><span>vistas por los dos</span></div>
-            <div class="stat hl"><b data-count id="s-wl">0</b><span>para ver juntos 🍿</span></div>
-            <div class="stat"><b data-count id="s-a">0</b><span id="s-a-label">vistas</span></div>
-            <div class="stat"><b data-count id="s-b">0</b><span id="s-b-label">vistas</span></div>
-            <div class="stat" style="grid-column: 1 / -1">
-              <b id="s-pct">0%</b><span>de coincidencia (sobre quien vio menos)</span>
-              <div class="meter"><i id="meter"></i></div>
-            </div>
+        <div class="versus reveal">
+          <div class="amb a" id="amb-a"></div>
+          <div class="amb b" id="amb-b"></div>
+          <div class="who a">
+            <h2><a id="name-a" target="_blank" rel="noopener"></a></h2>
+            <p><b id="tot-a"></b> vistas · <b id="wl-a"></b> en watchlist</p>
+          </div>
+          <div class="meet" id="meet">
+            <div class="ph a" id="ph-a"></div>
+            <div class="ph b" id="ph-b"></div>
+            <div class="badge"><div><b id="badge-n">0</b><span>en común</span></div></div>
+          </div>
+          <div class="who b">
+            <h2><a id="name-b" target="_blank" rel="noopener"></a></h2>
+            <p><b id="tot-b"></b> vistas · <b id="wl-b"></b> en watchlist</p>
           </div>
         </div>
 
-        <div class="tabs" role="tablist">
-          <span class="ink" id="ink"></span>
-          <button role="tab" aria-selected="true" data-view="common">Vistas por los dos<span class="count" id="c-common"></span></button>
-          <button role="tab" aria-selected="false" data-view="watchlist">🍿 Para ver juntos<span class="count" id="c-wl"></span></button>
+        <div class="tiles reveal" style="animation-delay:0.1s">
+          <div class="tile g"><b id="t-common">0</b><span>vistas por los dos</span></div>
+          <div class="tile g"><b id="t-wl">0</b><span>para ver juntos 🍿</span></div>
+          <div class="tile"><b id="t-same">0</b><span>con el mismo puntaje</span></div>
+          <div class="tile"><b id="t-pct">0%</b><span>de coincidencia</span><div class="meter"><i id="meter"></i></div></div>
         </div>
-        <p id="view-note"></p>
 
-        <div class="toolbar">
-          <div class="search"><span>⌕</span><input id="filter" type="search" placeholder="Filtrar por título o año…" /></div>
-          <button class="btn-dl" id="download" type="button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-            Descargar Excel
+        <div id="warnings" hidden></div>
+
+        <div class="controls">
+          <div class="tabs" role="tablist">
+            <span class="ink" id="ink"></span>
+            <button role="tab" aria-selected="true" data-view="common">Vistas por los dos<span class="count" id="c-common"></span></button>
+            <button role="tab" aria-selected="false" data-view="watchlist">Para ver juntos<span class="count" id="c-wl"></span></button>
+          </div>
+          <label class="search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input id="filter" type="search" placeholder="Buscar título o año" aria-label="Buscar" />
+          </label>
+          <select id="sort" aria-label="Ordenar">
+            <option value="title:1">Título A–Z</option>
+            <option value="year:-1">Más nuevas</option>
+            <option value="year:1">Más viejas</option>
+            <option value="ratingA:-1" data-r>Mejor puntaje 1</option>
+            <option value="ratingB:-1" data-r>Mejor puntaje 2</option>
+            <option value="diff:-1" data-r>Más desacuerdo</option>
+          </select>
+          <div class="seg" role="group" aria-label="Vista">
+            <button type="button" data-layout="grid" aria-pressed="true" title="Grilla"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></button>
+            <button type="button" data-layout="list" aria-pressed="false" title="Lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+          </div>
+          <button class="btn-dl" id="download" type="button" title="Descargar Excel">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            <span class="dl-txt">Excel</span>
           </button>
         </div>
-
-        <div class="card table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th data-key="title">Título</th>
-                <th data-key="year">Año</th>
-                <th data-key="ratingA" id="th-a" class="rating-col">A</th>
-                <th data-key="ratingB" id="th-b" class="rating-col">B</th>
-              </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div>
+        <p id="view-note"></p>
+        <div id="out"></div>
       </section>
 
       <footer>
-        Datos de perfiles públicos de <a href="https://letterboxd.com" target="_blank" rel="noopener">Letterboxd</a> ·
-        <a href="https://github.com/luccafrachelle/letterboxd-match" target="_blank" rel="noopener">código</a>
+        Datos de perfiles públicos de <a href="https://letterboxd.com" target="_blank" rel="noopener">Letterboxd</a>. No afiliado a Letterboxd.
       </footer>
-    </main>
+    </div>
 
     <script>
       type Film = { title: string; year: number | null; url: string; ratingA: number | null; ratingB: number | null };
       type Result = {
-        warnings: string[]; userA: string; userB: string; totalA: number; totalB: number;
-        watchlistTotalA: number; watchlistTotalB: number; common: Film[]; watchlistCommon: Film[];
+        warnings: string[]; userA: string; userB: string; avatarA?: string | null; avatarB?: string | null;
+        totalA: number; totalB: number; watchlistTotalA: number; watchlistTotalB: number;
+        common: Film[]; watchlistCommon: Film[];
       };
+      type SortKey = keyof Film | 'diff';
 
       const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
       const status = $('status');
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let result: Result | null = null;
-      let sortKey: keyof Film = 'title';
+      let sortKey: SortKey = 'title';
       let sortDir: 1 | -1 = 1;
       let view: 'common' | 'watchlist' = 'common';
+      let layout: 'grid' | 'list' = 'grid';
 
-      const stars = (r: number | null) =>
-        r == null ? '<span class="none">—</span>' : '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
       const esc = (s: string) =>
         s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+      const stars = (r: number | null) =>
+        r == null ? '<span class="none">sin puntaje</span>' : '★'.repeat(Math.floor(r)) + (r % 1 ? '½' : '');
+      const starsShort = (r: number | null) => (r == null ? '<span class="none">—</span>' : stars(r));
+
+      // Color estable por título → "poster" generado.
+      function hue(s: string) {
+        let h = 0;
+        for (const c of s) h = (h * 31 + c.codePointAt(0)!) >>> 0;
+        return h % 360;
+      }
+      // Paleta curada de "afiches": cada par es [luz, sombra].
+      const PALETTE = [
+        ['#c2412d', '#2a0d0a'], ['#1f7a8c', '#071c26'], ['#d39b2a', '#3a1f05'], ['#6c4bc4', '#150c33'],
+        ['#c74b7c', '#2e0b1d'], ['#e0672f', '#33100a'], ['#3c6e9e', '#0b1626'], ['#5f8a3a', '#122108'],
+        ['#2aa198', '#062521'], ['#9e2b3a', '#24060c'], ['#8a6f5a', '#1e1510'], ['#b84fb0', '#260a28'],
+      ];
+      const posterBg = (t: string) => {
+        const h = hue(t);
+        const [light, dark] = PALETTE[h % PALETTE.length];
+        const ang = 140 + (h % 50);
+        return `background: linear-gradient(${ang}deg, ${light}, ${dark} 78%)`;
+      };
+
+      const avatar = (url: string | null | undefined, name: string, cls = '') =>
+        url ? `<img src="${esc(url)}" alt="" class="${cls}" referrerpolicy="no-referrer" loading="lazy" />` : esc(name.slice(0, 1).toUpperCase());
 
       function setStatus(msg: string, error = false) {
         status.textContent = msg;
         status.className = error ? 'error' : '';
       }
 
-      function countUp(el: HTMLElement, to: number, suffix = '') {
+      function countUp(el: HTMLElement, to: number, suffix = '', delay = 0) {
         if (reduced) return void (el.textContent = to + suffix);
-        const start = performance.now();
+        el.textContent = '0' + suffix;
         const dur = 900 + Math.min(to, 300) * 2;
-        const tick = (now: number) => {
-          const t = Math.min(1, (now - start) / dur);
-          el.textContent = Math.round(to * (1 - Math.pow(1 - t, 3))) + suffix;
-          if (t < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        setTimeout(() => {
+          const start = performance.now();
+          const tick = (now: number) => {
+            const t = Math.min(1, (now - start) / dur);
+            el.textContent = Math.round(to * (1 - Math.pow(1 - t, 3))) + suffix;
+            if (t < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }, delay);
       }
 
       function moveInk() {
         const sel = document.querySelector<HTMLElement>('.tabs [aria-selected=true]');
-        const ink = $('ink');
         if (!sel) return;
-        ink.style.left = `${sel.offsetLeft}px`;
-        ink.style.width = `${sel.offsetWidth}px`;
+        $('ink').style.left = `${sel.offsetLeft}px`;
+        $('ink').style.width = `${sel.offsetWidth}px`;
+      }
+
+      function sortedRows(): Film[] {
+        if (!result) return [];
+        const q = $<HTMLInputElement>('filter').value.trim().toLowerCase();
+        const source = view === 'common' ? result.common : result.watchlistCommon;
+        const val = (f: Film): string | number | null =>
+          sortKey === 'diff' ? (f.ratingA != null && f.ratingB != null ? Math.abs(f.ratingA - f.ratingB) : null) : f[sortKey];
+        return source
+          .filter((f) => !q || f.title.toLowerCase().includes(q) || String(f.year ?? '').includes(q))
+          .sort((x, y) => {
+            const a = val(x), b = val(y);
+            if (a == null && b == null) return 0;
+            if (a == null) return 1;
+            if (b == null) return -1;
+            const c = typeof a === 'string' ? a.localeCompare(b as string, 'es', { sensitivity: 'base' }) : (a as number) - (b as number);
+            return c * sortDir || x.title.localeCompare(y.title, 'es');
+          });
       }
 
       function render() {
         if (!result) return;
-        const q = $<HTMLInputElement>('filter').value.trim().toLowerCase();
+        const r = result;
         const withRatings = view === 'common';
-        document.querySelectorAll<HTMLElement>('.rating-col').forEach((th) => (th.hidden = !withRatings));
+        document.querySelectorAll<HTMLOptionElement>('#sort option[data-r]').forEach((o) => (o.hidden = !withRatings));
         $('view-note').textContent = withRatings
-          ? `Pelis que vieron @${result.userA} y @${result.userB}, con el puntaje de cada uno.`
-          : `Pelis que están en la watchlist de @${result.userA} y de @${result.userB}: las quieren ver los dos.`;
-        const source = withRatings ? result.common : result.watchlistCommon;
-        const rows = source
-          .filter((f) => !q || f.title.toLowerCase().includes(q) || String(f.year ?? '').includes(q))
-          .sort((x, y) => {
-            const a = x[sortKey], b = y[sortKey];
-            if (a == null && b == null) return 0;
-            if (a == null) return 1;
-            if (b == null) return -1;
-            return (typeof a === 'string' ? a.localeCompare(b as string, 'es', { sensitivity: 'base' }) : (a as number) - (b as number)) * sortDir;
-          });
-        $('tbody').innerHTML = rows.length
-          ? rows
-              .map((f, i) => {
-                const same = withRatings && f.ratingA != null && f.ratingA === f.ratingB ? '<span class="same">mismo puntaje</span>' : '';
-                return `<tr style="animation-delay:${Math.min(i, 25) * 22}ms">
-                  <td><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.title)}</a>${same}</td>
+          ? `Pelis que vieron @${r.userA} y @${r.userB}, con el puntaje de cada uno.`
+          : `Están en la watchlist de @${r.userA} y de @${r.userB}: las quieren ver los dos.`;
+        const rows = sortedRows();
+        const source = withRatings ? r.common : r.watchlistCommon;
+        if (!rows.length) {
+          $('out').innerHTML = `<div class="empty"><b>${source.length ? 'Nada por acá' : withRatings ? 'Cero en común 😢' : 'Ninguna en las dos watchlists'}</b>${
+            source.length ? 'Probá con otra búsqueda.' : withRatings ? 'Ideal para recomendarse pelis.' : 'Buen momento para agregar algunas.'
+          }</div>`;
+          return;
+        }
+        const delay = (i: number) => `animation-delay:${Math.min(i, 24) * 28}ms`;
+        if (layout === 'grid') {
+          $('out').innerHTML = `<div class="grid">${rows
+            .map((f, i) => {
+              const same = withRatings && f.ratingA != null && f.ratingA === f.ratingB;
+              return `<a class="film" href="${esc(f.url)}" target="_blank" rel="noopener" style="${delay(i)}">
+                <div class="poster" style="${posterBg(f.title)}">
+                  ${same ? '<span class="same-tag">Mismo ★</span>' : ''}
+                  <span class="yr">${f.year ?? ''}</span>
+                  <span class="t">${esc(f.title)}</span>
+                  <span class="go">Ver en Letterboxd ↗</span>
+                </div>
+                ${
+                  withRatings
+                    ? `<div class="rates">
+                        <div class="rate a"><span class="av">${avatar(r.avatarA, r.userA)}</span>${stars(f.ratingA)}</div>
+                        <div class="rate b"><span class="av">${avatar(r.avatarB, r.userB)}</span>${stars(f.ratingB)}</div>
+                      </div>`
+                    : ''
+                }
+              </a>`;
+            })
+            .join('')}</div>`;
+        } else {
+          const thAv = (url: string | null | undefined, name: string) =>
+            `<span class="th-av">${url ? `<img src="${esc(url)}" alt="" referrerpolicy="no-referrer" />` : ''}@${esc(name)}</span>`;
+          $('out').innerHTML = `<div class="list"><table>
+            <thead><tr><th>Título</th><th>Año</th>${withRatings ? `<th>${thAv(r.avatarA, r.userA)}</th><th>${thAv(r.avatarB, r.userB)}</th>` : ''}</tr></thead>
+            <tbody>${rows
+              .map(
+                (f, i) => `<tr style="${delay(i)}">
+                  <td><span class="sw" style="${posterBg(f.title)}"></span><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.title)}</a></td>
                   <td class="num">${f.year ?? ''}</td>
-                  ${withRatings ? `<td class="stars a">${stars(f.ratingA)}</td><td class="stars b">${stars(f.ratingB)}</td>` : ''}
-                </tr>`;
-              })
-              .join('')
-          : `<tr><td colspan="4" class="empty">${
-              source.length ? 'Nada coincide con el filtro.' : withRatings ? 'No tienen pelis vistas en común 😢' : 'No hay pelis en la watchlist de los dos.'
-            }</td></tr>`;
-        document.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) => {
-          if (th.dataset.key === sortKey) th.dataset.dir = sortDir === 1 ? 'asc' : 'desc';
-          else delete th.dataset.dir;
-        });
-      }
-
-      function drawVenn(r: Result) {
-        // Radios proporcionales a la raíz de la cantidad (área ∝ pelis); solapamiento según % en común.
-        const max = Math.max(r.totalA, r.totalB, 1);
-        const ra = 40 + 40 * Math.sqrt(r.totalA / max);
-        const rb = 40 + 40 * Math.sqrt(r.totalB / max);
-        const overlap = r.common.length / (Math.min(r.totalA, r.totalB) || 1);
-        let d = (ra + rb) * (1 - 0.75 * overlap) + 4;
-        // Escalar para que entre en el ancho del SVG (300) con margen.
-        const k = Math.min(1, 290 / (ra + d + rb));
-        const [sa, sb] = [ra * k, rb * k];
-        d *= k;
-        const cx = 150 + (sa - sb) / 2, ax = cx - d / 2, bx = cx + d / 2;
-        const cy = 90, labelY = cy + Math.max(sa, sb) + 18;
-        const set = (id: string, attrs: Record<string, string | number>) =>
-          Object.entries(attrs).forEach(([k, v]) => $(id).setAttribute(k, String(v)));
-        set('v-a', { cx: ax, r: sa });
-        set('v-b', { cx: bx, r: sb });
-        set('v-a-only', { x: ax - sa / 2.3 });
-        set('v-b-only', { x: bx + sb / 2.3 });
-        set('v-both', { x: (ax + sa + bx - sb) / 2 });
-        set('v-a-name', { x: ax, y: labelY });
-        set('v-b-name', { x: bx, y: labelY });
-        $('v-a-only').textContent = String(r.totalA - r.common.length);
-        $('v-b-only').textContent = String(r.totalB - r.common.length);
-        $('v-both').textContent = String(r.common.length);
-        $('v-a-name').textContent = `@${r.userA}`;
-        $('v-b-name').textContent = `@${r.userB}`;
-        // reiniciar animación
-        document.querySelectorAll<SVGElement>('.venn circle').forEach((c) => {
-          c.style.animation = 'none';
-          void c.getBoundingClientRect();
-          c.style.animation = '';
-        });
+                  ${withRatings ? `<td class="st a">${starsShort(f.ratingA)}</td><td class="st b">${starsShort(f.ratingB)}</td>` : ''}
+                </tr>`,
+              )
+              .join('')}</tbody></table></div>`;
+        }
       }
 
       function show(r: Result) {
         result = r;
+        document.body.classList.add('has-results');
         const min = Math.min(r.totalA, r.totalB) || 1;
         const pct = Math.round((r.common.length / min) * 100);
-        $('s-a-label').textContent = `vistas por @${r.userA}`;
-        $('s-b-label').textContent = `vistas por @${r.userB}`;
-        $('th-a').textContent = `★ @${r.userA}`;
-        $('th-b').textContent = `★ @${r.userB}`;
+        const same = r.common.filter((f) => f.ratingA != null && f.ratingA === f.ratingB).length;
+
+        // Versus
+        for (const [k, user, url, tot, wl] of [
+          ['a', r.userA, r.avatarA, r.totalA, r.watchlistTotalA],
+          ['b', r.userB, r.avatarB, r.totalB, r.watchlistTotalB],
+        ] as const) {
+          const name = $<HTMLAnchorElement>(`name-${k}`);
+          name.textContent = `@${user}`;
+          name.href = `https://letterboxd.com/${encodeURIComponent(user)}/`;
+          $(`tot-${k}`).textContent = String(tot);
+          $(`wl-${k}`).textContent = String(wl);
+          $(`ph-${k}`).innerHTML = avatar(url, user);
+          $(`amb-${k}`).style.backgroundImage = url ? `url("${url}")` : 'none';
+          $(`amb-${k}`).style.backgroundColor = url ? '' : k === 'a' ? 'var(--orange)' : 'var(--blue)';
+        }
+        // Cuanto más en común, más se superponen las fotos.
+        const meet = $('meet');
+        meet.style.setProperty('--shift', `${Math.round(8 + 42 * Math.min(1, pct / 60))}px`);
+        meet.classList.remove('go');
+        void meet.offsetWidth;
+        requestAnimationFrame(() => meet.classList.add('go'));
+
+        countUp($('badge-n'), r.common.length, '', 800);
+        countUp($('t-common'), r.common.length);
+        countUp($('t-wl'), r.watchlistCommon.length);
+        countUp($('t-same'), same);
+        countUp($('t-pct'), pct, '%');
+        $('meter').style.width = '0';
+        requestAnimationFrame(() => requestAnimationFrame(() => ($('meter').style.width = `${pct}%`)));
         $('c-common').textContent = String(r.common.length);
         $('c-wl').textContent = String(r.watchlistCommon.length);
+        $('sort').querySelector<HTMLOptionElement>('[value="ratingA:-1"]')!.textContent = `Mejor puntaje de @${r.userA}`;
+        $('sort').querySelector<HTMLOptionElement>('[value="ratingB:-1"]')!.textContent = `Mejor puntaje de @${r.userB}`;
+
         const warn = $('warnings');
         warn.hidden = !r.warnings.length;
-        warn.innerHTML = r.warnings.length
-          ? `⚠ Resultado parcial:<ul>${r.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
+        warn.textContent = r.warnings.length
+          ? '⚠ Letterboxd solo deja leer las primeras 72 pelis vistas de cada perfil, así que puede haber más en común. La watchlist sí está completa.'
           : '';
+        warn.title = r.warnings.join('\n');
+
         const res = $('results');
         res.hidden = false;
         res.querySelectorAll<HTMLElement>('.reveal').forEach((el) => {
-          el.style.animation = 'none';
+          el.style.animationName = 'none';
           void el.offsetWidth;
-          el.style.animation = '';
+          el.style.animationName = '';
         });
-        drawVenn(r);
-        countUp($('s-common'), r.common.length);
-        countUp($('s-wl'), r.watchlistCommon.length);
-        countUp($('s-a'), r.totalA);
-        countUp($('s-b'), r.totalB);
-        countUp($('s-pct'), pct, '%');
-        $('meter').style.width = '0';
-        requestAnimationFrame(() => requestAnimationFrame(() => ($('meter').style.width = `${pct}%`)));
         setStatus('');
         moveInk();
         render();
       }
 
-      const loadingMsgs = (a: string, b: string) => [
-        `Leyendo las pelis de @${a}…`,
-        `Leyendo las pelis de @${b}…`,
-        'Revisando las watchlists…',
-        'Cruzando listas…',
-      ];
-
-      async function run(form: HTMLFormElement, a: string, b: string, req: () => Promise<Response>) {
-        const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+      async function run(a: string, b: string) {
+        const btn = $<HTMLButtonElement>('form-user').querySelector<HTMLButtonElement>('button[type=submit]')!;
+        const short = (s: string) => s.replace(/.*letterboxd\.com\//i, '').replace(/^@|\/.*$/g, '') || s;
         btn.disabled = true;
         btn.textContent = 'Comparando…';
         document.body.classList.add('loading');
         $('results').hidden = true;
-        $('warnings').hidden = true;
         $('skeleton').hidden = false;
-        const msgs = loadingMsgs(a, b);
+        const msgs = [`Leyendo las pelis de @${short(a)}…`, `Leyendo las pelis de @${short(b)}…`, 'Revisando las watchlists…', 'Cruzando listas…'];
         let i = 0;
         setStatus(msgs[0]);
         const timer = setInterval(() => setStatus(msgs[++i % msgs.length]), 1600);
         try {
-          const res = await req();
+          const res = await fetch(`/api/common.json?${new URLSearchParams({ a, b })}`);
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-          clearInterval(timer);
           $('skeleton').hidden = true;
           show(data);
         } catch (e) {
-          clearInterval(timer);
           $('skeleton').hidden = true;
           setStatus((e as Error).message, true);
         } finally {
+          clearInterval(timer);
           document.body.classList.remove('loading');
           btn.disabled = false;
           btn.textContent = 'Comparar';
@@ -518,12 +625,9 @@ const b = Astro.url.searchParams.get('b') ?? '';
         const fd = new FormData(form);
         const a = String(fd.get('a')).trim();
         const b = String(fd.get('b')).trim();
-        const params = new URLSearchParams({ a, b });
-        history.replaceState(null, '', `?${params}`);
-        const short = (s: string) => s.replace(/.*letterboxd\.com\//i, '').replace(/[/@].*$|^@/g, '') || s;
-        run(form, short(a), short(b), () => fetch(`/api/common.json?${params}`));
+        history.replaceState(null, '', `?${new URLSearchParams({ a, b })}`);
+        run(a, b);
       });
-
       $('swap').addEventListener('click', () => {
         const ia = form.elements.namedItem('a') as HTMLInputElement;
         const ib = form.elements.namedItem('b') as HTMLInputElement;
@@ -531,47 +635,51 @@ const b = Astro.url.searchParams.get('b') ?? '';
       });
 
       $('filter').addEventListener('input', render);
+      $<HTMLSelectElement>('sort').addEventListener('change', (e) => {
+        const [k, d] = (e.target as HTMLSelectElement).value.split(':');
+        sortKey = k as SortKey;
+        sortDir = Number(d) as 1 | -1;
+        render();
+      });
       document.querySelectorAll<HTMLButtonElement>('[role=tab][data-view]').forEach((tab) =>
         tab.addEventListener('click', () => {
           document.querySelectorAll('[role=tab][data-view]').forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
           view = tab.dataset.view as typeof view;
-          if (view === 'watchlist' && (sortKey === 'ratingA' || sortKey === 'ratingB')) { sortKey = 'title'; sortDir = 1; }
+          if (view === 'watchlist' && ['ratingA', 'ratingB', 'diff'].includes(sortKey)) {
+            sortKey = 'title';
+            sortDir = 1;
+            $<HTMLSelectElement>('sort').value = 'title:1';
+          }
           moveInk();
           render();
         }),
       );
-      addEventListener('resize', moveInk);
-      document.querySelectorAll<HTMLElement>('th[data-key]').forEach((th) =>
-        th.addEventListener('click', () => {
-          const key = th.dataset.key as keyof Film;
-          sortDir = sortKey === key ? (sortDir === 1 ? -1 : 1) : key === 'title' ? 1 : -1;
-          sortKey = key;
+      document.querySelectorAll<HTMLButtonElement>('[data-layout]').forEach((b) =>
+        b.addEventListener('click', () => {
+          layout = b.dataset.layout as typeof layout;
+          document.querySelectorAll('[data-layout]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
           render();
         }),
       );
+      addEventListener('resize', moveInk);
 
       $('download').addEventListener('click', async () => {
         if (!result) return;
         const btn = $<HTMLButtonElement>('download');
         btn.disabled = true;
         try {
-          const res = await fetch('/api/excel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result),
-          });
+          const res = await fetch('/api/excel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(result) });
           if (!res.ok) return setStatus('No se pudo generar el Excel', true);
           const blob = await res.blob();
           const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'pelis_en_comun.xlsx';
-          const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+          const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
         } finally {
           btn.disabled = false;
         }
       });
 
-      // Link compartible: si la URL trae ?a=&b=, comparar directo.
       const p = new URLSearchParams(location.search);
       if (p.get('a') && p.get('b')) form.requestSubmit();
     </script>
