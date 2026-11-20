@@ -1,11 +1,12 @@
 import { fetchList, normalizeUsername, type Film, type ListResult } from './letterboxd.ts';
+import { withPosters } from './posters.ts';
 
 export interface CommonFilm {
   title: string;
   year: number | null;
   url: string;
-  /** URLs candidatas del poster (la primera que cargue). */
-  posters: string[];
+  /** Poster que carga (CDN de Letterboxd o Wikipedia), o null. */
+  poster?: string | null;
 }
 
 export interface CompareResult {
@@ -25,12 +26,11 @@ export interface CompareResult {
 const titleYearKey = (f: Film) => `${f.title.trim().toLowerCase()}|${f.year ?? ''}`;
 
 /** Cruza por slug y, si no coincide, por título + año. */
-export function commonFilms(a: Film[], b: Film[]): CommonFilm[] {
+export function commonFilms(a: Film[], b: Film[]): Film[] {
   const slugs = new Set(b.map((f) => f.slug));
   const titles = new Set(b.map(titleYearKey));
   return a
     .filter((f) => slugs.has(f.slug) || titles.has(titleYearKey(f)))
-    .map((f) => ({ title: f.title, year: f.year, url: f.url, posters: f.posters }))
     .sort((x, y) => x.title.localeCompare(y.title, 'es', { sensitivity: 'base' }));
 }
 
@@ -69,7 +69,12 @@ export async function compareUsers(rawA: string, rawB: string): Promise<CompareR
     avatarB: b.avatar,
     watchlistTotalA: a.films.length,
     watchlistTotalB: b.films.length,
-    watchlistCommon: commonFilms(a.films, b.films),
+    watchlistCommon: (await withPosters(commonFilms(a.films, b.films), (f) => f.posters)).map((f) => ({
+      title: f.title,
+      year: f.year,
+      url: f.url,
+      poster: f.poster,
+    })),
     generatedAt: new Date().toISOString(),
   };
 }

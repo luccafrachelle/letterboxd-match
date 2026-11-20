@@ -8,8 +8,8 @@ const b = Astro.url.searchParams.get('b') ?? '';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Para ver juntos · Letterboxd</title>
-    <meta name="description" content="Poné dos perfiles de Letterboxd y encontrá las pelis que están en la watchlist de los dos." />
+    <title>Pelis en común</title>
+    <meta name="description" content="Las pelis que están en la watchlist de dos perfiles de Letterboxd." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -189,9 +189,9 @@ const b = Astro.url.searchParams.get('b') ?? '';
       .btn-ghost:hover { border-color: var(--green); background: rgba(0, 224, 84, 0.07); }
       .btn-dl { color: #04150a; background: var(--green); border: 0; }
       .btn-dl:hover { transform: translateY(-1px); box-shadow: 0 10px 28px -10px rgba(0, 224, 84, 0.7); }
-      .dice { display: inline-block; transition: transform 0.6s var(--spring); }
-      .rolling .dice { transform: rotate(720deg); }
-      #view-note { margin: 4px 0 16px; color: var(--muted); font-size: 0.9rem; }
+      .dice { transition: transform 0.6s var(--spring); }
+      .rolling .dice { transform: rotate(360deg); }
+      #out { margin-top: 8px; }
 
       /* Grilla de posters */
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 16px; }
@@ -268,18 +268,18 @@ const b = Astro.url.searchParams.get('b') ?? '';
     <div class="glow"></div>
     <div class="wrap">
       <div class="topbar">
-        <a class="brand" href="/"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>Para ver juntos</a>
-        <nav><a href="https://github.com/luccafrachelle/letterboxd-match" target="_blank" rel="noopener">GitHub ↗</a></nav>
+        <a class="brand" href="/"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>Pelis en común</a>
+        <nav><a href="https://github.com/luccafrachelle/letterboxd-match" target="_blank" rel="noopener">GitHub</a></nav>
       </div>
 
       <section class="hero">
-        <h1>¿Qué vemos <em>juntos?</em></h1>
-        <p class="sub">Poné dos perfiles de Letterboxd y encontrá las pelis que están en la watchlist de los dos.</p>
+        <h1>Pelis en <em>común</em></h1>
+        <p class="sub">Entre dos watchlists de Letterboxd.</p>
         <form id="form-user">
-          <label class="field" id="field-a"><span class="pin"></span><input name="a" aria-label="Usuario 1" placeholder="Usuario o link al perfil" value={a} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+          <label class="field" id="field-a"><span class="pin"></span><input name="a" aria-label="Usuario 1" placeholder="Usuario 1" value={a} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
           <button type="button" class="swap" id="swap" title="Intercambiar" aria-label="Intercambiar usuarios">⇄</button>
-          <label class="field" id="field-b"><span class="pin"></span><input name="b" aria-label="Usuario 2" placeholder="Otro usuario" value={b} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
-          <button class="primary" type="submit">Buscar</button>
+          <label class="field" id="field-b"><span class="pin"></span><input name="b" aria-label="Usuario 2" placeholder="Usuario 2" value={b} required autocomplete="off" autocapitalize="off" spellcheck="false" /></label>
+          <button class="primary" type="submit">Comparar</button>
         </form>
         <p id="status" role="status"></p>
       </section>
@@ -295,16 +295,16 @@ const b = Astro.url.searchParams.get('b') ?? '';
           <div class="amb b" id="amb-b"></div>
           <div class="who a">
             <h2><a id="name-a" target="_blank" rel="noopener"></a></h2>
-            <p><b id="wl-a"></b> pelis en su watchlist</p>
+            <p><b id="wl-a"></b> en watchlist</p>
           </div>
           <div class="meet" id="meet">
             <div class="ph a" id="ph-a"></div>
             <div class="ph b" id="ph-b"></div>
-            <div class="badge"><div><b id="badge-n">0</b><span>para ver<br />juntos</span></div></div>
+            <div class="badge"><div><b id="badge-n">0</b><span>en común</span></div></div>
           </div>
           <div class="who b">
             <h2><a id="name-b" target="_blank" rel="noopener"></a></h2>
-            <p><b id="wl-b"></b> pelis en su watchlist</p>
+            <p><b id="wl-b"></b> en watchlist</p>
           </div>
         </div>
 
@@ -324,23 +324,22 @@ const b = Astro.url.searchParams.get('b') ?? '';
             <button type="button" data-layout="grid" aria-pressed="true" title="Grilla"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></button>
             <button type="button" data-layout="list" aria-pressed="false" title="Lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
           </div>
-          <button class="btn btn-ghost" id="random" type="button"><span class="dice">🎲</span> Elegir una</button>
+          <button class="btn btn-ghost" id="random" type="button" title="Elegir una al azar"><svg class="dice" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span>Al azar</span></button>
           <button class="btn btn-dl" id="download" type="button" title="Descargar Excel">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
             Excel
           </button>
         </div>
-        <p id="view-note"></p>
         <div id="out"></div>
       </section>
 
       <footer>
-        Datos de perfiles públicos de <a href="https://letterboxd.com" target="_blank" rel="noopener">Letterboxd</a>. No afiliado a Letterboxd.
+        Datos de <a href="https://letterboxd.com" target="_blank" rel="noopener">Letterboxd</a> · Posters de Letterboxd y Wikipedia
       </footer>
     </div>
 
     <script>
-      type Film = { title: string; year: number | null; url: string; posters: string[] };
+      type Film = { title: string; year: number | null; url: string; poster?: string | null };
       type Result = {
         warnings: string[]; userA: string; userB: string; avatarA?: string | null; avatarB?: string | null;
         watchlistTotalA: number; watchlistTotalB: number; watchlistCommon: Film[];
@@ -374,25 +373,18 @@ const b = Astro.url.searchParams.get('b') ?? '';
         const [light, dark] = PALETTE[h % PALETTE.length];
         return `background: linear-gradient(${140 + (h % 50)}deg, ${light}, ${dark} 78%)`;
       };
-      const safePoster = (u: string) => /^https:\/\/a\.ltrbxd\.com\/resized\/film-poster\//.test(u);
-      // La imagen prueba cada URL candidata en orden; si ninguna carga, queda el poster generado.
-      const posterImg = (f: Film) => {
-        const urls = (f.posters ?? []).filter(safePoster);
-        if (!urls.length) return '';
-        return `<img class="pst" src="${esc(urls[0])}" data-alts="${esc(urls.slice(1).join(' '))}" alt="" decoding="async" referrerpolicy="no-referrer" />`;
-      };
+      const safePoster = (u: string | null | undefined): u is string =>
+        !!u && /^https:\/\/(a\.ltrbxd\.com\/resized\/film-poster|upload\.wikimedia\.org)\//.test(u);
+      // Si la imagen no carga, se saca y queda el afiche generado de fondo.
+      const posterImg = (f: Film) =>
+        safePoster(f.poster) ? `<img class="pst" src="${esc(f.poster)}" alt="" decoding="async" referrerpolicy="no-referrer" />` : '';
       document.addEventListener('load', (e) => {
         const t = e.target as HTMLElement;
         if (t instanceof HTMLImageElement && t.classList.contains('pst')) t.classList.add('ok');
       }, true);
       document.addEventListener('error', (e) => {
-        const img = e.target as HTMLImageElement;
-        if (!(img instanceof HTMLImageElement) || !img.classList.contains('pst')) return;
-        const [next, ...rest] = (img.dataset.alts ?? '').split(' ').filter(Boolean);
-        if (next) {
-          img.dataset.alts = rest.join(' ');
-          img.src = next;
-        } else img.remove();
+        const img = e.target as HTMLElement;
+        if (img instanceof HTMLImageElement && img.classList.contains('pst')) img.remove();
       }, true);
 
       const avatar = (url: string | null | undefined, name: string) =>
@@ -437,12 +429,11 @@ const b = Astro.url.searchParams.get('b') ?? '';
         if (!result) return;
         const r = result;
         const rows = sortedRows();
-        $('view-note').textContent = `Están en la watchlist de @${r.userA} y de @${r.userB}: las quieren ver los dos.`;
         $<HTMLButtonElement>('random').disabled = rows.length < 1;
         if (!rows.length) {
           $('out').innerHTML = r.watchlistCommon.length
-            ? '<div class="empty"><b>Nada por acá</b>Probá con otra búsqueda.</div>'
-            : '<div class="empty"><b>Ninguna en común</b>Buen momento para recomendarse algunas.</div>';
+            ? '<div class="empty"><b>Sin resultados</b></div>'
+            : '<div class="empty"><b>Ninguna en común</b></div>';
           return;
         }
         const delay = (i: number) => `animation-delay:${Math.min(i, 24) * 28}ms`;
@@ -453,7 +444,7 @@ const b = Astro.url.searchParams.get('b') ?? '';
                 <div class="poster" style="${posterBg(f.title)}">
                   <span class="t">${esc(f.title)}</span>
                   ${posterImg(f)}
-                  <span class="go">Ver en Letterboxd ↗</span>
+                  <span class="go">Abrir en Letterboxd</span>
                 </div>
                 <div class="cap"><b title="${esc(f.title)}">${esc(f.title)}</b><span>${f.year ?? ''}</span></div>
               </a>`,
@@ -472,7 +463,7 @@ const b = Astro.url.searchParams.get('b') ?? '';
         }
       }
 
-      // 🎲 Ruleta: recorre las pelis y frena en una al azar.
+      // Ruleta: recorre las pelis y frena en una al azar.
       async function pickRandom() {
         const items = [...$('out').querySelectorAll<HTMLElement>('.film, a.row')];
         if (!items.length) return;
@@ -498,12 +489,8 @@ const b = Astro.url.searchParams.get('b') ?? '';
         items[winner].classList.add('picked');
         grid?.classList.add('choosing');
         items[winner].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
-        const title = items[winner].querySelector('.cap b, .tt')?.textContent ?? '';
-        setStatus('');
         btn.classList.remove('rolling');
         btn.disabled = false;
-        btn.lastChild!.textContent = ' Otra';
-        $('view-note').textContent = `🎬 Esta noche: ${title}. ¿No convence? Tirá de nuevo.`;
       }
 
       function show(r: Result) {
@@ -532,7 +519,8 @@ const b = Astro.url.searchParams.get('b') ?? '';
 
         const warn = $('warnings');
         warn.hidden = !r.warnings.length;
-        warn.textContent = r.warnings.length ? `⚠ Resultado parcial: ${r.warnings.join(' ')}` : '';
+        warn.textContent = r.warnings.length ? 'Resultado parcial: Letterboxd no dejó leer toda la watchlist.' : '';
+        warn.title = r.warnings.join('\n');
 
         const res = $('results');
         res.hidden = false;
@@ -541,23 +529,18 @@ const b = Astro.url.searchParams.get('b') ?? '';
           void el.offsetWidth;
           el.style.animationName = '';
         });
-        $('random').lastChild!.textContent = ' Elegir una';
         setStatus('');
         render();
       }
 
       async function run(a: string, b: string) {
         const btn = $<HTMLFormElement>('form-user').querySelector<HTMLButtonElement>('button[type=submit]')!;
-        const short = (s: string) => s.replace(/.*letterboxd\.com\//i, '').replace(/^@|\/.*$/g, '') || s;
         btn.disabled = true;
-        btn.textContent = 'Buscando…';
+        btn.textContent = 'Comparando…';
         document.body.classList.add('loading');
         $('results').hidden = true;
         $('skeleton').hidden = false;
-        const msgs = [`Leyendo la watchlist de @${short(a)}…`, `Leyendo la watchlist de @${short(b)}…`, 'Cruzando listas…'];
-        let i = 0;
-        setStatus(msgs[0]);
-        const timer = setInterval(() => setStatus(msgs[++i % msgs.length]), 1500);
+        setStatus('');
         try {
           const res = await fetch(`/api/common.json?${new URLSearchParams({ a, b })}`);
           const data = await res.json();
@@ -568,10 +551,9 @@ const b = Astro.url.searchParams.get('b') ?? '';
           $('skeleton').hidden = true;
           setStatus((e as Error).message, true);
         } finally {
-          clearInterval(timer);
           document.body.classList.remove('loading');
           btn.disabled = false;
-          btn.textContent = 'Buscar';
+          btn.textContent = 'Comparar';
         }
       }
 

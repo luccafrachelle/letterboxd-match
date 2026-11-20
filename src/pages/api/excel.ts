@@ -23,7 +23,7 @@ function sanitize(body: any): CompareResult {
     watchlistTotalA: num(body.watchlistTotalA) ?? 0,
     watchlistTotalB: num(body.watchlistTotalB) ?? 0,
     generatedAt: new Date().toISOString(),
-    watchlistCommon: list.map((f: any): CommonFilm => ({ title: str(f?.title), year: num(f?.year), url: safeUrl(f?.url), posters: [] })),
+    watchlistCommon: list.map((f: any): CommonFilm => ({ title: str(f?.title), year: num(f?.year), url: safeUrl(f?.url), poster: null })),
   };
 }
 
